@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Environment variables (keep .env.example for documentation)
+.env
+
+# VS Code
+.vscode/
