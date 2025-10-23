@@ -1,5 +1,5 @@
 from data_handler import DataLoader
-from planner import AnalysisPlanner
+from code.agents.planner import AnalysisPlanner
 import os
 import sys
 from huggingface_hub import login

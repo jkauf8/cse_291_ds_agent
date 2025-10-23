@@ -7,7 +7,7 @@ from langchain_core.output_parsers import JsonOutputParser
 
 from prompts.planner_prompt import planner_prompt
 
-class AnalysisPlanner:
+class Planner:
     """
     LangChain agent that analyzes user requests and leverages appropriate tools
     to conduct analysis for the Network Intrusion Detection System.
@@ -37,11 +37,14 @@ class AnalysisPlanner:
             # )
 
         # Set up tools
-        self.tools = {"describe_data()":"this tool is used for gathering statistical insights or information about the data", 
-                      "run_regression()":"this tool is used for running RandomForest model to conduct regression on the data to discover regression insights including predictions, most important factors, etc"}
+        self.tools = {
+            "describe_data()": "this tool is used for gathering statistical insights or information about the data",
+            "run_regression()": "this tool is used for running RandomForest model to conduct regression on the data to discover regression insights including predictions, most important factors, etc",
+            "direct_response()": "this tool is used for greetings, small talk, or questions unrelated to housing or coffee shop data analysis"
+        }
 
 
-    def run(self, user_request):
+    def plan(self, user_request):
         """
         Execute the agent on a user request.
 
