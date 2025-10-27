@@ -6,9 +6,11 @@ Allows interactive conversation with the data science agent.
 from agent_graph import AgentGraph
 from data_handler import DataLoader
 from transformers import pipeline
-from langchain_huggingface import HuggingFacePipeline
-from huggingface_hub import login
+#from langchain_huggingface import HuggingFacePipeline
+#from huggingface_hub import login
 from dotenv import load_dotenv
+from langchain_aws import ChatBedrock
+
 import os
 import sys
 
@@ -16,39 +18,58 @@ import sys
 load_dotenv()
 
 def initialize_system():
-    """Initialize LLM, datasets, and agent graph"""
+    # """Initialize LLM, datasets, and agent graph"""
 
-    print("\n Logging in to HuggingFace...")
+    # print("\n Logging in to HuggingFace...")
+    # try:
+    #     hf_token = os.getenv("HUGGINGFACE_TOKEN")
+    #     if not hf_token:
+    #         raise ValueError("HUGGINGFACE_TOKEN not found in .env file")
+    #     login(token=hf_token, new_session=False)
+    #     print(" Logged in successfully")
+    # except Exception as e:
+    #     print(f" Login failed: {e}")
+    #     sys.exit(1)
+
+    # print("\n Loading LLM ...")
+    # try:
+    #     pipe = pipeline(
+    #         "text-generation",
+    #         model="meta-llama/Meta-Llama-3.1-8B-Instruct",
+    #         temperature=0.1,
+    #         return_full_text=False
+    #     )
+
+    #     llm = HuggingFacePipeline(
+    #         pipeline=pipe,
+    #         model_kwargs={"temperature": 0.1}
+    #     )
+    #     print(" LLM loaded successfully")
+    # except Exception as e:
+    #     print(f" Error loading LLM: {e}")
+    #     import traceback
+    #     traceback.print_exc()
+    #     sys.exit(1)
+    print("\nLoading Bedrock LLM...")
     try:
-        hf_token = os.getenv("HUGGINGFACE_TOKEN")
-        if not hf_token:
-            raise ValueError("HUGGINGFACE_TOKEN not found in .env file")
-        login(token=hf_token, new_session=False)
-        print(" Logged in successfully")
-    except Exception as e:
-        print(f" Login failed: {e}")
-        sys.exit(1)
-
-    print("\n Loading LLM ...")
-    try:
-        pipe = pipeline(
-            "text-generation",
-            model="meta-llama/Meta-Llama-3.1-8B-Instruct",
-            temperature=0.1,
-            return_full_text=False
+        # Instantiate ChatBedrock
+        # It automatically picks up credentials and region from .env
+        llm = ChatBedrock(
+            # Specify the model ID for Llama 3.1 8B Instruct on Bedrock
+            model_id="meta.llama3-1-8b-instruct-v1:0", 
+            # Pass model parameters here
+            model_kwargs={
+                "temperature": 0.1,
+                # "max_gen_len": 100 # Example if you want to set max tokens
+            }
         )
+        print("✓ Bedrock LLM (Llama 3.1 8B) loaded successfully")
 
-        llm = HuggingFacePipeline(
-            pipeline=pipe,
-            model_kwargs={"temperature": 0.1}
-        )
-        print(" LLM loaded successfully")
     except Exception as e:
-        print(f" Error loading LLM: {e}")
+        print(f"✗ Error loading Bedrock LLM: {e}")
         import traceback
         traceback.print_exc()
-        sys.exit(1)
-
+        return
     print("\n Loading datasets...")
     loader = DataLoader()
     datasets = {}

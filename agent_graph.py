@@ -71,7 +71,7 @@ class AgentGraph:
 
         state['route'] = {'router_decision': selected_tool}
 
-        print(f"Planner decision: {state["route"]}")
+        print(f"Planner decision: {state['route']}")
 
         return state
 
@@ -86,7 +86,7 @@ class AgentGraph:
 
         state['route'] = {'router_decision': routing_decision}
 
-        print(f"Reviewer decision: {state["route"]}")
+        print(f"Reviewer decision: {state['route']}")
 
         return state
 
