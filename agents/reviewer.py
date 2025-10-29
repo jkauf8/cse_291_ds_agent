@@ -53,4 +53,6 @@ class Reviewer:
             "user_question": user_question,
             "tool_result": tool_result
         })
-        return result["route"]
+        
+        # Return the routing decision
+        return result["router_decision"]

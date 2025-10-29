@@ -46,6 +46,22 @@ NOW REVIEW THIS OUTPUT with ONE single JSON:
 User's Original Question: {user_question}
 
 Tool Output/Result: {tool_result}
+
+INSTRUCTIONS:
+1. Carefully read the user's original question
+2. Examine the tool output/result
+3. Determine if the tool output adequately addresses the user's question
+4. If the results are sufficient to answer the question, output 'final_reporter'.
+5. If the results are insufficient, output 'planner' to run another tool.
+
+Provide your output in JSON format:
+{{
+    "router_decision": "planner" 
+}}
+OR
+{{
+    "router_decision": "final_reporter"
+}}
 """
 
 reviewer_prompt = PromptTemplate(
