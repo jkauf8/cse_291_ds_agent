@@ -61,6 +61,25 @@ User Request: Good morning!
 NOW RESPOND TO THIS REQUEST with ONE single JSON:
 
 User Request: {input}
+
+If the user wants to run a regression, provide the dataset name, target column, and feature columns.
+If feature columns are not specified, use all columns except the target.
+If the dataset name is not specified, use the available dataset.
+
+Provide your output in JSON format.
+
+Example for regression:
+{{
+    "tool": "run_regression()",
+    "dataset": "housing",
+    "target_column": "price",
+    "feature_columns": ["area", "bedrooms", "bathrooms"]
+}}
+
+Example for general question:
+{{
+    "tool": "direct_response()"
+}}
 """
 
 planner_prompt = PromptTemplate(
