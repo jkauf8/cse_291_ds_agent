@@ -38,7 +38,7 @@ class Planner:
 
         # Set up tools
         self.tools = {
-            "describe_data()": "this tool is used for gathering statistical insights or information about the data",
+            "describe_data()": "Use this tool when the user asks for data overview, summary statistics, dataset information, data exploration, or wants to understand what's in the data. Examples: 'describe the data', 'show me summary stats', 'what columns are available', 'explore the dataset'",
             "run_regression()": "this tool is used for running RandomForest model to conduct regression on the data to discover regression insights including predictions, most important factors, etc",
             "direct_response()": "this tool is used for greetings, small talk, or questions unrelated to housing or coffee shop data analysis"
         }
