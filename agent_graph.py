@@ -3,7 +3,7 @@ from typing import TypedDict
 from agents.planner import Planner
 from agents.reviewer import Reviewer
 from agents.final_reporter import FinalReporter
-
+from tools.describe_data import describe_data
 
 class State(TypedDict):
     """State passed between nodes in the graph"""
@@ -111,10 +111,50 @@ class AgentGraph:
     def describe_data_tool(self, state: State):
         """Tool to describe the dataset"""
         # TODO: Implement actual data description logic
-        state['tool_result'] = "Data description: Statistical summary of the dataset"
+        print("DescribeData: running dataset description...")
 
+        question = state.get('question', '') or ''
+        
+        # Enhanced dataset selection with fallback
+        selected_dataset_key = None
+        q_lower = question.lower()
+        
+        # Try to match dataset from question
+        for key in self.datasets.keys():
+            if key.lower() in q_lower:
+                selected_dataset_key = key
+                break
+        
+        # Fallback to available datasets
+        if selected_dataset_key is None:
+            available_datasets = list(self.datasets.keys())
+            if not available_datasets:
+                state['tool_result'] = {"error": "No datasets available to describe."}
+                return state
+            selected_dataset_key = available_datasets[0]
+            print(f"DescribeData: No specific dataset mentioned, using '{selected_dataset_key}'")
+
+        df = self.datasets[selected_dataset_key]
+        
+        # Validate dataset is not empty
+        if df.empty:
+            state['tool_result'] = {"error": f"Dataset '{selected_dataset_key}' is empty after loading."}
+            return state
+
+        try:
+            result = describe_data(df=df, dataset_name=selected_dataset_key)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            state['tool_result'] = {"error": f"DescribeData failed: {str(e)}"}
+            return state
+
+        # Attach structured result and metadata to state
+        state['tool_result'] = result
+        state['dataset_name'] = selected_dataset_key
+
+        print("DescribeData: description complete.")
         return state
-
     def run_regression_tool(self, state: State):
         """Tool to run regression analysis"""
         # TODO: Implement actual regression logic

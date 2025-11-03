@@ -60,7 +60,7 @@ def initialize_system():
             # Pass model parameters here
             model_kwargs={
                 "temperature": 0.1,
-                # "max_gen_len": 100 # Example if you want to set max tokens
+                "max_gen_len": 4000 # Example if you want to set max tokens
             }
         )
         print("✓ Bedrock LLM (Llama 3.1 8B) loaded successfully")

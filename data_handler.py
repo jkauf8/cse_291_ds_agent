@@ -23,7 +23,7 @@ class DataLoader:
             df = pd.read_excel(file_path)
         else:
             raise ValueError(f"Unsupported file format: {file_path.suffix}")
-
-        df = df.dropna()
+    
+        # df = df.dropna()
 
         return df
