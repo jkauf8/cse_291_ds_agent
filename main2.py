@@ -1,18 +1,20 @@
 """
-Main script with chatbot-like interface using AgentGraph.
-Allows interactive conversation with the data science agent.
+Main script with a Gradio web interface for the
+AgentGraph chatbot.
 """
 
+import gradio as gr
 from agent_graph import AgentGraph
 from data_handler import DataLoader
-from transformers import pipeline
-#from langchain_huggingface import HuggingFacePipeline
-#from huggingface_hub import login
+# from transformers import pipeline  # Commented out as in original
+# from langchain_huggingface import HuggingFacePipeline # Commented out as in original
+# from huggingface_hub import login # Commented out as in original
 from dotenv import load_dotenv
 from langchain_aws import ChatBedrock
 
 import os
 import sys
+import traceback
 
 # Load environment variables
 load_dotenv()
@@ -20,56 +22,23 @@ load_dotenv()
 def initialize_system():
     # """Initialize LLM, datasets, and agent graph"""
 
-    # print("\n Logging in to HuggingFace...")
-    # try:
-    #     hf_token = os.getenv("HUGGINGFACE_TOKEN")
-    #     if not hf_token:
-    #         raise ValueError("HUGGINGFACE_TOKEN not found in .env file")
-    #     login(token=hf_token, new_session=False)
-    #     print(" Logged in successfully")
-    # except Exception as e:
-    #     print(f" Login failed: {e}")
-    #     sys.exit(1)
-
-    # print("\n Loading LLM ...")
-    # try:
-    #     pipe = pipeline(
-    #         "text-generation",
-    #         model="meta-llama/Meta-Llama-3.1-8B-Instruct",
-    #         temperature=0.1,
-    #         return_full_text=False
-    #     )
-
-    #     llm = HuggingFacePipeline(
-    #         pipeline=pipe,
-    #         model_kwargs={"temperature": 0.1}
-    #     )
-    #     print(" LLM loaded successfully")
-    # except Exception as e:
-    #     print(f" Error loading LLM: {e}")
-    #     import traceback
-    #     traceback.print_exc()
-    #     sys.exit(1)
+    # --- Your original LLM loading (now Bedrock) ---
     print("\nLoading Bedrock LLM...")
     try:
-        # Instantiate ChatBedrock
-        # It automatically picks up credentials and region from .env
         llm = ChatBedrock(
-            # Specify the model ID for Llama 3.1 8B Instruct on Bedrock
             model_id="meta.llama3-1-8b-instruct-v1:0", 
-            # Pass model parameters here
             model_kwargs={
                 "temperature": 0.1,
-                # "max_gen_len": 100 # Example if you want to set max tokens
             }
         )
         print("✓ Bedrock LLM (Llama 3.1 8B) loaded successfully")
 
     except Exception as e:
         print(f"✗ Error loading Bedrock LLM: {e}")
-        import traceback
         traceback.print_exc()
-        return
+        return None  # Return None on failure instead of exiting
+    
+    # --- Your original dataset loading ---
     print("\n Loading datasets...")
     loader = DataLoader()
     datasets = {}
@@ -77,88 +46,106 @@ def initialize_system():
     try:
         housing_path = "data/housing.csv"
         datasets['housing'] = loader.load_data(housing_path)
-        print(f" Loaded housing dataset: {len(datasets['housing'])} rows, {len(datasets['housing'].columns)} columns")
+        print(f"✓ Loaded housing dataset: {len(datasets['housing'])} rows, {len(datasets['housing'].columns)} columns")
     except Exception as e:
-        print(f" Warning: Could not load housing dataset: {e}")
+        print(f"Warning: Could not load housing dataset: {e}")
 
     try:
         coffee_path = "data/coffee_shop_sales.xlsx"
         datasets['coffee'] = loader.load_data(coffee_path)
-        print(f" Loaded coffee dataset: {len(datasets['coffee'])} rows, {len(datasets['coffee'].columns)} columns")
+        print(f"✓ Loaded coffee dataset: {len(datasets['coffee'])} rows, {len(datasets['coffee'].columns)} columns")
     except Exception as e:
-        print(f" Warning: Could not load coffee dataset: {e}")
+        print(f"Warning: Could not load coffee dataset: {e}")
 
+    # --- Your original AgentGraph initialization ---
     print("\n Initializing AgentGraph...")
     try:
         agent_graph = AgentGraph(llm=llm, datasets=datasets)
-        print(" AgentGraph initialized successfully \n ")
+        print("✓ AgentGraph initialized successfully \n")
         return agent_graph
     except Exception as e:
-        print(f" Error initializing AgentGraph: {e}")
-        import traceback
+        print(f"✗ Error initializing AgentGraph: {e}")
         traceback.print_exc()
-        sys.exit(1)
+        return None # Return None on failure
 
-
-def process_user_query(agent_graph: AgentGraph, user_input: str):
-    """Process a user query and display results in chatbot style"""
-
-    try:
-        final_result = agent_graph.run(user_input)
-
-        print("\n" + "=" * 80)
-        print(" " * 30 + "FINAL REPORT")
-        print("=" * 80 + "\n")
-
-        print(final_result['response'])
-        print("\n" + "=" * 80 + "\n")
-
-    except Exception as e:
-        print(f"\n Error processing query: {e}")
-        import traceback
-        traceback.print_exc()
-
-
-def chat_loop(agent_graph: AgentGraph):
-    """Main chatbot interaction loop"""
-
-    while True:
+def create_gradio_app(agent_graph: AgentGraph):
+    """
+    Creates and configures the Gradio ChatInterface.
+    """
+    
+    def chat_response(message, history):
+        """
+        This is the core function that Gradio's ChatInterface will call.
+        'message' is the user's new input.
+        'history' is the chat history (which we don't need for the agent).
+        It uses the 'agent_graph' object initialized when the app started.
+        """
+        print(f"\nProcessing user query: '{message}'")
         try:
-            user_input = input("How may I help you? ").strip()
+            # Use the pre-initialized agent_graph
+            final_result = agent_graph.run(message)
+            
+            response = final_result['response']
+            
+            # Print the report to the console for logging
+            print("\n" + "=" * 80)
+            print(" " * 30 + "FINAL REPORT (to console)")
+            print("=" * 80 + "\n")
+            print(response)
+            print("\n" + "=" * 80 + "\n")
+            
+            # Return the response string to the Gradio UI
+            return response
 
-            if user_input.lower() in ['quit', 'exit']:
-                print("\n Thank you for using the Data Science Agent. Goodbye!\n")
-                break
-
-            print()
-            process_user_query(agent_graph, user_input)
-
-        except KeyboardInterrupt:
-            print("\n\n Session interrupted. Goodbye!\n")
-            break
-        except EOFError:
-            print("\n\n Session ended. Goodbye!\n")
-            break
         except Exception as e:
-            print(f"\n Unexpected error: {e}")
-            import traceback
+            print(f"\n✗ Error processing query: {e}")
             traceback.print_exc()
-            print("\n You can continue asking questions or type 'exit' to exit.\n")
+            # Return a user-friendly error message to the Gradio UI
+            return "Sorry, I encountered an error while processing your request. Please check the console logs for details."
 
-
-def main():
-    print("\n" + "=" * 80)
-    print(" " * 25 + "DATA SCIENCE AGENT CHATBOT")
-    print("=" * 80)
-    print("Ask questions about your data and get comprehensive analysis!")
-    print("Type 'quit' or 'exit' to end the session")
-    print("=" * 80 + "\n")
-
-    agent_graph = initialize_system()
-
-
-    chat_loop(agent_graph)
+    # --- Create the Gradio Interface ---
+    print("Creating Gradio interface...")
+    iface = gr.ChatInterface(
+        fn=chat_response,
+        title="🤖 Data Science Agent",
+        description="Ask questions about your data (housing.csv, coffee_shop_sales.xlsx) and get a comprehensive analysis.",
+        examples=[
+            "What's the average price of houses in the dataset?",
+            "Which 5 neighborhoods have the highest average house price?",
+            "What is the total coffee sales revenue?",
+            "Generate a bar plot of sales by coffee type and save it as 'coffee_sales.png'."
+        ],
+        theme="soft",
+        submit_btn="Run Analysis",
+        #placeholder="e.g., What is the total sales revenue from the coffee dataset?"
+    )
+    
+    return iface
 
 
 if __name__ == "__main__":
-    main()
+    print("\n" + "=" * 80)
+    print(" " * 25 + "DATA SCIENCE AGENT CHATBOT")
+    print("=" * 80)
+    print("Initializing system... This may take a moment.")
+    
+    # 1. Initialize the agent graph ONCE.
+    # This object will be shared by all Gradio sessions.
+    agent_graph = initialize_system()
+
+    if agent_graph is None:
+        print("=" * 80)
+        print("✗ FATAL: System initialization failed. Check logs above.")
+        print("=" * 80)
+        sys.exit(1) # Exit if setup fails
+
+    print("=" * 80)
+    print("✓ System initialized. Launching Gradio interface...")
+    print("=" * 80 + "\n")
+
+    # 2. Create the Gradio App
+    app = create_gradio_app(agent_graph)
+    
+    # 3. Launch the web server
+    # The 'chat_loop' is now replaced by Gradio's server
+    app.launch()
