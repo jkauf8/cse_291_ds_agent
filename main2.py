@@ -6,9 +6,9 @@ AgentGraph chatbot.
 import gradio as gr
 from agent_graph import AgentGraph
 from data_handler import DataLoader
-# from transformers import pipeline  # Commented out as in original
-# from langchain_huggingface import HuggingFacePipeline # Commented out as in original
-# from huggingface_hub import login # Commented out as in original
+# from transformers import pipeline  
+# from langchain_huggingface import HuggingFacePipeline
+# from huggingface_hub import login 
 from dotenv import load_dotenv
 from langchain_aws import ChatBedrock
 
@@ -22,7 +22,6 @@ load_dotenv()
 def initialize_system():
     # """Initialize LLM, datasets, and agent graph"""
 
-    # --- Your original LLM loading (now Bedrock) ---
     print("\nLoading Bedrock LLM...")
     try:
         llm = ChatBedrock(
@@ -36,9 +35,8 @@ def initialize_system():
     except Exception as e:
         print(f"✗ Error loading Bedrock LLM: {e}")
         traceback.print_exc()
-        return None  # Return None on failure instead of exiting
+        return None  
     
-    # --- Your original dataset loading ---
     print("\n Loading datasets...")
     loader = DataLoader()
     datasets = {}
@@ -57,7 +55,6 @@ def initialize_system():
     except Exception as e:
         print(f"Warning: Could not load coffee dataset: {e}")
 
-    # --- Your original AgentGraph initialization ---
     print("\n Initializing AgentGraph...")
     try:
         agent_graph = AgentGraph(llm=llm, datasets=datasets)
@@ -66,7 +63,7 @@ def initialize_system():
     except Exception as e:
         print(f"✗ Error initializing AgentGraph: {e}")
         traceback.print_exc()
-        return None # Return None on failure
+        return None 
 
 def create_gradio_app(agent_graph: AgentGraph):
     """
@@ -82,12 +79,12 @@ def create_gradio_app(agent_graph: AgentGraph):
         """
         print(f"\nProcessing user query: '{message}'")
         try:
-            # Use the pre-initialized agent_graph
+            
             final_result = agent_graph.run(message)
             
             response = final_result['response']
             
-            # Print the report to the console for logging
+           
             print("\n" + "=" * 80)
             print(" " * 30 + "FINAL REPORT (to console)")
             print("=" * 80 + "\n")
@@ -117,7 +114,6 @@ def create_gradio_app(agent_graph: AgentGraph):
         ],
         theme="soft",
         submit_btn="Run Analysis",
-        #placeholder="e.g., What is the total sales revenue from the coffee dataset?"
     )
     
     return iface
