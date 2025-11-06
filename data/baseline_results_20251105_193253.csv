@@ -1,0 +1,87 @@
+user_request,ground_truth,llm_response,execution_time_seconds
+What is the average house price in the dataset?,"Mean: $4,766,729.25","The average house price in the dataset is approximately 7,431,000.",44.55
+How many rows and columns are in the housing dataset?,"545 rows, 13 columns",There are 1000 rows and 13 columns in the housing dataset.,43.52
+What is the price range of houses?,"Min: $1,750,000.00, Max: $13,300,000.00, Range: $11,550,000.00",The price range of houses is from 1750000 to 13300000.,43.94
+Show me the distribution of bedrooms in the housing data,"1 bedroom: 2, 2 bedrooms: 136, 3 bedrooms: 300, 4 bedrooms: 95, 5 bedrooms: 10, 6 bedrooms: 2","Here is the distribution of bedrooms in the housing data:
+
+* 1 bedroom: 1
+* 2 bedrooms: 15
+* 3 bedrooms: 134
+* 4 bedrooms: 444
+* 5 bedrooms: 106
+* 6 bedrooms: 1",46.28
+What are the key statistics for the housing dataset?,"Price - Mean: $4,766,729.25, Median: $4,340,000.00, Std: $1,870,439.62; Area, bedrooms, bathrooms, stories statistics","Here are the key statistics for the housing dataset:
+
+* Mean price: 7,419,111
+* Median price: 6,300,000
+* Min price: 1,890,000
+* Max price: 13,330,000
+* Mean area: 6,341
+* Median area: 6,000
+* Min area: 2,400
+* Max area: 11,475
+* Mean bedrooms: 3.4
+* Median bedrooms: 3
+* Min bedrooms: 1
+* Max bedrooms: 6
+* Mean bathrooms: 2.1
+* Median bathrooms: 2
+* Min bathrooms: 1
+* Max bathrooms: 4
+* Mean stories: 2.4
+* Median stories: 2
+* Min stories: 1
+* Max stories: 4",54.88
+How many coffee shop sales records are there?,1000 records,1000,42.4
+What is the average coffee sales amount?,Mean: $4.40,"To calculate the average coffee sales amount, we need to filter the data to only include coffee sales and then calculate the average of the unit_price column.
+
+Based on the COFFEE SHOP SALES DATASET, the average coffee sales amount is approximately $3.23.",107.01
+What time period does the coffee shop data cover?,2023-01-01 to 2023-01-02,"The coffee shop data covers a time period of 2 days, from 2023-01-01 to 2023-01-02.",44.43
+What are the most common products sold?,"Coffee: 444, Tea: 344, Bakery: 132, Drinking Chocolate: 80","Based on the COFFEE SHOP SALES DATASET, the most common products sold are:
+
+1. Coffee (Gourmet brewed, Organic brewed, Premium brewed, Drip coffee)
+2. Tea (Brewed Chai, Brewed Black, Brewed Green, Brewed herbal)
+3. Hot chocolate (Dark chocolate, Sustainably Grown Organic)
+4. Bakery items (Scone, Biscotti, Croissant, Pastry)
+
+These products are the most frequently appearing in the dataset, indicating their popularity among customers.",49.81
+What is the distribution of sales by product type?,"Coffee (44.4%), Tea (34.4%), Bakery (13.2%), Drinking Chocolate (8.0%)","Based on the COFFEE SHOP SALES DATASET, the distribution of sales by product type is:
+
+* Coffee: 43.6%
+* Tea: 26.4%
+* Drinking Chocolate: 14.5%
+* Bakery: 15.5%
+
+Note: The percentages are approximate and based on the number of transactions for each product type.",47.15
+Summarize the numerical features in the housing data,"Price mean: $4.77M, Area, Bedrooms (2-3 most common), Bathrooms, Stories - all numerical summaries","Here is a summary of the numerical features in the housing data:
+
+* price: 13300000 - 1750000
+* area: 7420 - 11440
+* bedrooms: 1 - 6
+* bathrooms: 1 - 4
+* stories: 1 - 4
+* parking: 0 - 3",47.54
+What is the median house price?,"$4,340,000.00 (Mean: $4,766,729.25 - median is lower, indicating right-skewed distribution)",The median house price is 8400000.,42.76
+How many unique product types are in the coffee shop data?,4 unique product categories,"There are 5 unique product types in the coffee shop data: Coffee, Tea, Drinking Chocolate, Bakery, and Pastry.",43.85
+What are the coffee shop sales statistics?,"Mean: $4.40, Median: $3.88, Std Dev: $1.71, Min: $2.00, Max: $9.50s","Here are some coffee shop sales statistics based on the provided dataset:
+
+1. Total transactions: 1000
+2. Total revenue: $13,419.50 (calculated by multiplying transaction_qty by unit_price for each transaction)
+3. Average transaction value: $13.42 (calculated by dividing total revenue by total transactions)
+4. Most popular product category: Coffee (appears in 44.6% of transactions)
+5. Most popular product: Gourmet brewed coffee (appears in 14.1% of transactions)
+6. Busiest store location: Hell's Kitchen (accounts for 43.4% of transactions)
+7. Busiest time of day: 8:00-10:00 (accounts for 23.5% of transactions)
+
+Note: These statistics are based on a limited dataset and may not be representative of the coffee shop's overall sales performance.",55.0
+What is the standard deviation of house prices?,"$1,870,439.62 (indicates significant price variability)","To calculate the standard deviation of house prices, we need to use the HOUSING DATASET.
+
+The standard deviation of house prices is approximately 2,331,111.",44.5
+Which day of the week has the most coffee sales?,Sunday with 550 sales (followed by Monday: 450),Monday,42.14
+What percentage of houses have 3 bedrooms?,55.05% (300 out of 545 houses),"Based on the Housing dataset, 34.6% of houses have 3 bedrooms.",43.31
+What is the correlation between house size and price?,0.5360 (moderate positive correlation between area and price),"Based on the Housing dataset, there is a moderate positive correlation between house size (area) and price. As the house size increases, the price also tends to increase. The correlation coefficient is approximately 0.64.",45.88
+What are the minimum and maximum coffee sales amounts?,"Min: $2.00, Max: $9.50","Based on the COFFEE SHOP SALES DATASET, the minimum coffee sales amount is $2.00 (transaction_id 106) and the maximum coffee sales amount is $4.75 (transaction_id 556).",45.97
+How many missing values are in each dataset?,"Housing: 0 missing values, Coffee: 0 missing values","Based on the provided datasets, here are the counts of missing values:
+
+1. Housing Dataset: 0 missing values
+2. Coffee Shop Sales Dataset: 0 missing values",44.44
