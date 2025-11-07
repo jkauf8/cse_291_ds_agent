@@ -52,9 +52,15 @@ class Planner:
             user_request: The user's request
 
         Returns: 
-            str: The agent's tool to use
+            dict: The tool to use and its parameters
         """
         planner_agent = planner_prompt | self.llm | JsonOutputParser()
         result = planner_agent.invoke({"input": user_request, "tools": self.tools})
-        return result["tool"]
+        return result
+
+    def run(self, user_request):
+        """
+        Kept for backward compatibility if needed, but plan() is preferred.
+        """
+        return self.plan(user_request)
 
