@@ -3,7 +3,9 @@ from typing import TypedDict
 from agents.planner import Planner
 from agents.reviewer import Reviewer
 from agents.final_reporter import FinalReporter
-from tools.describe_data import describe_data
+from tools.regression_tool import run_regression # Import the new tool
+import pandas as pd # Import pandas
+from tools.describe_data import describe_data 
 
 class State(TypedDict):
     """State passed between nodes in the graph"""
@@ -12,6 +14,9 @@ class State(TypedDict):
     message_history: list
     route: dict
     tool_result: list
+    dataset_name: str
+    target_column: str
+    feature_columns: list
 
 
 class AgentGraph:
@@ -67,11 +72,19 @@ class AgentGraph:
 
         question = state.get('question', '')
 
-        selected_tool = self.planner.plan(question)
-
+        planner_result = self.planner.plan(question)
+        
+        selected_tool = planner_result.get("tool")
         state['route'] = {'router_decision': selected_tool}
 
+        # Store planner results in state
+        state['dataset_name'] = planner_result.get("dataset")
+        state['target_column'] = planner_result.get("target_column")
+        state['feature_columns'] = planner_result.get("feature_columns")
+
+
         print(f"Planner decision: {state['route']}")
+        print(f"Dataset: {state['dataset_name']}, Target: {state['target_column']}, Features: {state['feature_columns']}")
 
         return state
 
@@ -157,8 +170,46 @@ class AgentGraph:
         return state
     def run_regression_tool(self, state: State):
         """Tool to run regression analysis"""
-        # TODO: Implement actual regression logic
-        state['tool_result'] = "Regression analysis: Random Forest model results"
+        print("Tool: Running regression analysis...")
+        
+        dataset_name = state.get('dataset_name')
+        target_column = state.get('target_column')
+        feature_columns = state.get('feature_columns')
+
+        if not dataset_name or not target_column:
+            state['tool_result'] = ["Error: Dataset name or target column not provided by planner."]
+            return state
+
+        if dataset_name in self.datasets:
+            try:
+                df = self.datasets[dataset_name]
+
+                # Ensure target column exists
+                if target_column not in df.columns:
+                    state['tool_result'] = [f"Error: Target column '{target_column}' not found in the '{dataset_name}' dataset."]
+                    return state
+                
+                # If feature_columns are not specified, use all other columns
+                if not feature_columns:
+                    feature_columns = [col for col in df.columns if col != target_column]
+
+
+                # Run the regression function from the tool
+                results = run_regression(
+                    df=df, 
+                    target_column=target_column, 
+                    feature_columns=feature_columns
+                )
+                
+                # Store the summary in the state
+                state['tool_result'] = [results['summary']]
+                print(f"Tool: Regression complete. R2 score: {results['r2_score']:.4f}")
+
+            except Exception as e:
+                state['tool_result'] = [f"An error occurred during regression analysis: {str(e)}"]
+                print(f"Error in run_regression_tool: {e}")
+        else:
+            state['tool_result'] = [f"Dataset '{dataset_name}' not available for regression."]
 
         return state
 
@@ -189,7 +240,7 @@ class AgentGraph:
 
         # Add edges from tools to review agent
         workflow.add_edge('describe_data_tool', "review_agent")
-        workflow.add_edge('run_regression_tool', "review_agent")
+        workflow.add_edge('run_regression_tool', "report_agent") # Route directly to reporter
 
         # Add conditional edges from review agent
         workflow.add_conditional_edges(

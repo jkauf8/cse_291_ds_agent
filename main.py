@@ -1,36 +1,41 @@
+"""
+Main script with chatbot-like interface using AgentGraph.
+Allows interactive conversation with the data science agent.
+"""
+
+from agent_graph import AgentGraph
 from data_handler import DataLoader
-from agents.planner import Planner
-import os
-import sys
-# from huggingface_hub import login
-# from transformers import pipeline
-# from langchain_huggingface import HuggingFacePipeline
+from transformers import pipeline
+#from langchain_huggingface import HuggingFacePipeline
+#from huggingface_hub import login
 from dotenv import load_dotenv
 from langchain_aws import ChatBedrock
 
+import os
+import sys
+
+# Load environment variables
 load_dotenv()
 
+def initialize_system():
+    # """Initialize LLM, datasets, and agent graph"""
 
-def main():
-
-    # print("Logging in to HuggingFace...")
+    # print("\n Logging in to HuggingFace...")
     # try:
     #     hf_token = os.getenv("HUGGINGFACE_TOKEN")
     #     if not hf_token:
     #         raise ValueError("HUGGINGFACE_TOKEN not found in .env file")
     #     login(token=hf_token, new_session=False)
-    #     print("✓ Logged in successfully")
+    #     print(" Logged in successfully")
     # except Exception as e:
-    #     print(f"✗ Login failed: {e}")
+    #     print(f" Login failed: {e}")
+    #     sys.exit(1)
 
-    # print("\nLoading HuggingFace LLM...")
+    # print("\n Loading LLM ...")
     # try:
-    #     print("Loading model pipeline...")
-
     #     pipe = pipeline(
     #         "text-generation",
     #         model="meta-llama/Meta-Llama-3.1-8B-Instruct",
-    #         # max_new_tokens=100,
     #         temperature=0.1,
     #         return_full_text=False
     #     )
@@ -39,14 +44,12 @@ def main():
     #         pipeline=pipe,
     #         model_kwargs={"temperature": 0.1}
     #     )
-    #     print("✓ LLM loaded successfully")
-
+    #     print(" LLM loaded successfully")
     # except Exception as e:
-    #     print(f"✗ Error loading LLM: {e}")
+    #     print(f" Error loading LLM: {e}")
     #     import traceback
     #     traceback.print_exc()
-    #     return
-
+    #     sys.exit(1)
     print("\nLoading Bedrock LLM...")
     try:
         # Instantiate ChatBedrock
@@ -57,80 +60,110 @@ def main():
             # Pass model parameters here
             model_kwargs={
                 "temperature": 0.1,
-                # "max_gen_len": 100 # Example if you want to set max tokens
+                "max_tokens": 2048
             }
         )
-        print("✓ Bedrock LLM (Llama 3.1 8B) loaded successfully")
+        print("Done. Bedrock LLM (Llama 3.1 8B) loaded successfully")
 
     except Exception as e:
-        print(f"✗ Error loading Bedrock LLM: {e}")
+        print(f"Error loading Bedrock LLM: {e}")
         import traceback
         traceback.print_exc()
         return
-
-
-    print("=" * 80)
-    print("Data Science Agent")
-    print("=" * 80)
-
+    print("\n Loading datasets...")
     loader = DataLoader()
-
-    print("\n1. Loading datasets...")
     datasets = {}
 
     try:
         housing_path = "data/housing.csv"
-        print(f"  Loading {housing_path}...")
         datasets['housing'] = loader.load_data(housing_path)
-        print(f" Loaded {len(datasets['housing'])} rows, {len(datasets['housing'].columns)} columns")
+        print(f" Loaded housing dataset: {len(datasets['housing'])} rows, {len(datasets['housing'].columns)} columns")
     except Exception as e:
         print(f" Error loading Housing.csv: {e}")
 
+    # try:
+    #     coffee_path = "data/coffee_shop_sales.xlsx"
+    #     print(f"  Loading {coffee_path}...")
+    #     datasets['coffee'] = loader.load_data(coffee_path)
+    #     print(f" Loaded {len(datasets['coffee'])} rows, {len(datasets['coffee'].columns)} columns")
+    # except Exception as e:
+    #     print(f" Error loading Coffee Shop Sales.xlsx: {e}")
+
+
+    print("\n Initializing AgentGraph...")
     try:
-        coffee_path = "data/coffee_shop_sales.xlsx"
-        print(f"  Loading {coffee_path}...")
-        datasets['coffee'] = loader.load_data(coffee_path)
-        print(f" Loaded {len(datasets['coffee'])} rows, {len(datasets['coffee'].columns)} columns")
+        agent_graph = AgentGraph(llm=llm, datasets=datasets)
+        print(" AgentGraph initialized successfully \n ")
+        return agent_graph
     except Exception as e:
-        print(f" Error loading Coffee Shop Sales.xlsx: {e}")
+        print(f" Error initializing AgentGraph: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
 
-
-    print("\n2. Initializing Planner Agent...")
-    try:
-        planner = Planner(llm=llm)
-        print("✓ Planner initialized with HuggingFace LLM")
-        print(f"  Available tools: {list(planner.tools.keys())}")
-    except Exception as e:
-        print(f"✗ Error initializing planner: {e}")
-        return
-
-    print("\n3. Executing Planner Agent...")
-    print("-" * 80)
-
-    # Example user request
-    user_request = "What is the mean price of a house based on the data?"
-    print(f"User Request: {user_request}")
-    print("-" * 80)
+def process_user_query(agent_graph: AgentGraph, user_input: str):
+    """Process a user query and display results in chatbot style"""
 
     try:
-        tool_to_use = planner.run(user_request)
-        print(f"\n Planner selected tool: {tool_to_use}")
-
-        print("\n4. Results:")
-        print("-" * 80)
-        print(f"Recommended Tool: {tool_to_use}")
-        print(f"Tool Description: {planner.tools.get(tool_to_use, 'Tool not found')}")
-        print("-" * 80)
+        final_result = agent_graph.run(user_input)
+        
+        print("\n" + "=" * 80)
+        print(" " * 30 + "FINAL REPORT")
+        print("=" * 80 + "\n")
+        print(final_result['response'])
+        print("\n" + "=" * 80 + "\n")
 
     except Exception as e:
-        print(f"\n Error running planner: {e}")
+        print(f"\nAn error occurred: {e}")
         import traceback
         traceback.print_exc()
 
-    print("\n" + "=" * 80)
-    print("Analysis Pipeline Complete")
-    print("=" * 80)
+
+def chat_loop(agent_graph: AgentGraph):
+    """Main chatbot interaction loop"""
+
+    while True:
+        try:
+            user_input = input("How may I help you? ").strip()
+
+            if user_input.lower() in ['quit', 'exit']:
+                print("\n Thank you for using the Data Science Agent. Goodbye!\n")
+                break
+
+            print()
+            process_user_query(agent_graph, user_input)
+
+        except KeyboardInterrupt:
+            print("\n\n Session interrupted. Goodbye!\n")
+            break
+        except EOFError:
+            print("\n\n Session ended. Goodbye!\n")
+            break
+        except Exception as e:
+            print(f"\n Unexpected error: {e}")
+            import traceback
+            traceback.print_exc()
+            print("\n You can continue asking questions or type 'exit' to exit.\n")
+
+
+def main():
+    """Main function to run the data science agent chatbot."""
+    print("Initializing Data Science Agent...")
+    agent_graph = initialize_system()
+
+    if not agent_graph:
+        print("Could not initialize AgentGraph. Exiting.")
+        return
+
+    print("\n" + "="*80)
+    print("Data Science Agent is ready.")
+    print("I can help you with the following tasks on the 'housing' dataset:")
+    print("- Run regression analysis to predict price.")
+    print("- Describe the dataset to get statistical insights.")
+    print("="*80)
+
+    chat_loop(agent_graph)
 
 
 if __name__ == "__main__":
