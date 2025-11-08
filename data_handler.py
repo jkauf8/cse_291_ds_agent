@@ -24,11 +24,11 @@ class DataLoader:
         else:
             raise ValueError(f"Unsupported file format: {file_path.suffix}")
 
-        # If 'median_house_value' is a column, drop rows where it is missing
-        if 'median_house_value' in df.columns:
-            df = df.dropna(subset=['median_house_value'])
-        else:
-            # For other datasets, drop all rows with any NA to maintain original behavior
-            df = df.dropna()
+        # # If 'median_house_value' is a column, drop rows where it is missing
+        # if 'median_house_value' in df.columns:
+        #     df = df.dropna(subset=['median_house_value'])
+        # else:
+        #     # For other datasets, drop all rows with any NA to maintain original behavior
+        #     df = df.dropna()
 
         return df

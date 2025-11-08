@@ -54,14 +54,6 @@ INSTRUCTIONS:
 4. If the results are sufficient to answer the question, output 'final_reporter'.
 5. If the results are insufficient, output 'planner' to run another tool.
 
-Provide your output in JSON format:
-{{
-    "router_decision": "planner" 
-}}
-OR
-{{
-    "router_decision": "final_reporter"
-}}
 """
 
 reviewer_prompt = PromptTemplate(
