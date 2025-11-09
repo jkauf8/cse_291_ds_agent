@@ -27,6 +27,9 @@ def run_regression(df: pd.DataFrame, target_column: str, feature_columns: list =
 
     if target_column not in df.columns:
         raise ValueError(f"Target column '{target_column}' not found in the DataFrame.")
+    
+    if target_column in df.columns:
+        df = df.dropna(subset=[target_column])
 
     if feature_columns:
         if not all(col in df.columns for col in feature_columns):

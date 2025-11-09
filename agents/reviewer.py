@@ -55,4 +55,4 @@ class Reviewer:
         })
         
         # Return the routing decision
-        return result["router_decision"]
+        return result["route"]

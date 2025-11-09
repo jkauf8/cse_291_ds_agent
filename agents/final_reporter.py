@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 # from langchain_aws import ChatBedrock
 from langchain_core.output_parsers import StrOutputParser
@@ -37,7 +38,7 @@ class FinalReporter:
             # )
 
 
-    def generate_report(self, user_question: str, tool_result: str):
+    def generate_report(self, user_question: str, tool_result: Any):
         """
         Generate a comprehensive markdown report.
 
