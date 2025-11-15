@@ -77,19 +77,34 @@ def run_regression(df: pd.DataFrame, target_column: str, feature_columns: list =
 
     # Get feature importances
     try:
-        # Get feature names after one-hot encoding
-        ohe_feature_names = model.named_steps['preprocessor'].named_transformers_['cat'].get_feature_names_out(categorical_features)
-        all_feature_names = np.concatenate([numerical_features, ohe_feature_names])
-        
+        # Get feature names after preprocessing
         importances = model.named_steps['regressor'].feature_importances_
+        
+        # Build feature names list
+        all_feature_names = []
+        
+        # Add numerical feature names
+        all_feature_names.extend(numerical_features.tolist())
+        
+        # Add categorical feature names (after one-hot encoding)
+        if len(categorical_features) > 0:
+            ohe_feature_names = model.named_steps['preprocessor'].named_transformers_['cat'].get_feature_names_out(categorical_features)
+            all_feature_names.extend(ohe_feature_names.tolist())
+        
+        # Create dictionary of feature importances with actual names
         feature_importance_dict = dict(zip(all_feature_names, importances))
         
         # Sort feature importances
         sorted_feature_importance = sorted(feature_importance_dict.items(), key=lambda item: item[1], reverse=True)
     except Exception as e:
-        # Fallback if getting feature names fails
+        # Fallback if getting feature names fails - use original feature names
         importances = model.named_steps['regressor'].feature_importances_
-        feature_importance_dict = {f"feature_{i}": imp for i, imp in enumerate(importances)}
+        # Use the original X column names as fallback
+        feature_names = X.columns.tolist()
+        if len(feature_names) == len(importances):
+            feature_importance_dict = dict(zip(feature_names, importances))
+        else:
+            feature_importance_dict = {f"feature_{i}": imp for i, imp in enumerate(importances)}
         sorted_feature_importance = sorted(feature_importance_dict.items(), key=lambda item: item[1], reverse=True)
 
 

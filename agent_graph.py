@@ -1,5 +1,5 @@
 from langgraph.graph import StateGraph, END
-from typing import TypedDict
+from typing import TypedDict, List
 from agents.planner import Planner
 from agents.reviewer import Reviewer
 from agents.final_reporter import FinalReporter
@@ -43,13 +43,15 @@ class AgentGraph:
     def router(self, state: State):
         """Routes from planner to appropriate tool or directly to reporter"""
         route = state.get('route', {})
-        router_decision = route.get('router_decision')
+        router_decision = route.get('router_decision', [])
 
-        if router_decision == 'describe_data()':
+        if "describe_data()" in router_decision and "run_regression()" in router_decision:
+            return "DescribeAndRegress"
+        elif "describe_data()" in router_decision:
             return 'DescribeData'
-        elif router_decision == 'run_regression()':
+        elif "run_regression()" in router_decision:
             return 'RunRegression'
-        elif router_decision == 'direct_response()':
+        elif "direct_response()" in router_decision:
             return 'DirectResponse'
         else:
             return None
@@ -74,8 +76,8 @@ class AgentGraph:
 
         planner_result = self.planner.plan(question)
         
-        selected_tool = planner_result.get("tool")
-        state['route'] = {'router_decision': selected_tool}
+        selected_tools = planner_result.get("tools", [])
+        state['route'] = {'router_decision': selected_tools}
 
         # Store planner results in state
         state['dataset_name'] = planner_result.get("dataset")
@@ -168,6 +170,22 @@ class AgentGraph:
 
         print("DescribeData: description complete.")
         return state
+
+    def describe_and_regress_tool(self, state: State):
+        """Runs describe_data and then run_regression"""
+        print("Tool: Running Describe and then Regress...")
+        # Run describe data first
+        state = self.describe_data_tool(state)
+        description_result = state['tool_result']
+
+        # Then run regression
+        state = self.run_regression_tool(state)
+        regression_result = state['tool_result']
+        
+        # Combine results
+        state['tool_result'] = [description_result] + regression_result
+        return state
+
     def run_regression_tool(self, state: State):
         """Tool to run regression analysis"""
         print("Tool: Running regression analysis...")
@@ -221,6 +239,7 @@ class AgentGraph:
         workflow.add_node("planner_agent", self.planner_agent)
         workflow.add_node("describe_data_tool", self.describe_data_tool)
         workflow.add_node("run_regression_tool", self.run_regression_tool)
+        workflow.add_node("describe_and_regress_tool", self.describe_and_regress_tool)
         workflow.add_node("review_agent", self.review_agent)
         workflow.add_node("report_agent", self.report_agent)
 
@@ -234,6 +253,7 @@ class AgentGraph:
             {
                 "DescribeData": "describe_data_tool",
                 "RunRegression": "run_regression_tool",
+                "DescribeAndRegress": "describe_and_regress_tool",
                 "DirectResponse": "report_agent",
             },
         )
@@ -241,6 +261,8 @@ class AgentGraph:
         # Add edges from tools to review agent
         workflow.add_edge('describe_data_tool', "review_agent")
         workflow.add_edge('run_regression_tool', "report_agent") # Route directly to reporter
+        workflow.add_edge('describe_and_regress_tool', "report_agent")
+
 
         # Add conditional edges from review agent
         workflow.add_conditional_edges(
