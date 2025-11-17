@@ -1,0 +1,63 @@
+user_request,ground_truth_tool,ground_truth
+"⁠Build a regression model to predict house prices",run_regression()," **Model Performance (R² Score):** The Random Forest Regression model achieved an R² score of **0.4132**."
+"Create a machine learning model to predict the price of houses",run_regression()," **Model Performance (R² Score):** The Random Forest Regression model achieved an R² score of **0.4132**."
+"What features are most important for predicting house prices?",run_regression(),"   **Top 3 Most Important Features:**
+    *   **Area:** With an importance score of **0.7294**, 'area' is by far the most dominant predictor of house prices.
+    *   **Bathrooms:** The number of 'bathrooms' ranked as the second most important feature, with a score of **0.1819**.
+    *   **Bedrooms:** The number of 'bedrooms' was the third most influential feature, scoring **0.0886**.
+"
+"Train a prediction model for housing prices using all available features",run_regression(),"placeholder for now"
+"Can you predict house prices based on area, bedrooms, and bathrooms?",run_regression(),"placeholder for now"
+"Build a model to forecast property values",run_regression(),"placeholder for now"
+"Which variables have the strongest impact on house price predictions?",run_regression(),"placeholder for now"
+"⁠Develop a regression analysis to estimate housing costs",run_regression(),"placeholder for now"
+"First describe the housing data, then build a prediction model for prices",run_regression(),"placeholder for now"
+"Analyze the dataset and create a machine learning model to predict house values",run_regression(),"placeholder for now"
+Describe the housing dataset.,describe_data(),"545 rows × 13 columns
+6 numeric, 7 categorical
+0 missing values
+Quality score ≈ 10"
+What are the missing values in the housing dataset?,describe_data(),"All 13 columns have 0 missing values.
+Total missing % = 0%."
+Show basic statistics for all numeric columns.,describe_data(),"price mean ≈ 4.77M, median ≈ 4.34M
+area mean ≈ 5150.54, median ≈ 4600
+bedrooms mean ≈ 2.97, median ≈ 3.0
+Bathrooms mean ≈ 1.286, median ≈ 1.0
+Stories mean ≈ 1.80, median ≈2.0
+Parking mean ≈0.69 , median ≈ 0.0"
+What are the top 5 correlations in the housing data?,describe_data(),"price–area (0.536)
+price–bathrooms (0.518)
+price–stories (0.421)
+Bedrooms - stories (0.409)
+Parking - price (0.38)"
+List categorical columns and their top values.,describe_data(),"mainroad: yes (468), no (77)
+guestroom: no (448), yes (97)
+basement: no (354), yes (191)
+hotwaterheating: no (520), yes (25)
+airconditioning: no (373), yes (172)
+prefarea: no (417), yes (128)
+furnishingstatus: semi-furnished (227), unfurnished (178), furnished (140)"
+Show outlier analysis for price.,describe_data(),"Lower_bound : -35000.0
+Upper_bound : 9205000.0
+Count : 15 data points
+Percent : 2.75%
+up to 5 outlier examples:
+Index 0: Value 13300000.0
+Index 1: Value 12250000.0
+Index 2: Value 12250000.0
+Index 3: Value 12215000.0
+Index 4: Value 11410000.0"
+What is the data quality score of the housing dataset?,describe_data(),Quality score ≈ 10.0
+Which columns have high missing percentages?,describe_data(),None
+Show 3 sample rows from the dataset.,describe_data(),"| price | area | bedrooms | bathrooms | stories | mainroad | guestroom | basement |
+hotwaterheating | airconditioning | parking | prefarea | furnishingstatus |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 13,300,000 | 7,420 | 4 | 2 | 3 | yes | no | no | no | yes | 2 | yes | furnished |
+| 12,250,000 | 8,960 | 4 | 4 | 4 | yes | no | no | no | yes | 3 | no | furnished |
+| 12,250,000 | 9,960 | 3 | 2 | 2 | yes | no | yes | no | no | 2 | yes | semi-furnished |"
+What are the suggested target columns?,describe_data(),"price
+area
+bedrooms
+bathrooms
+stories
+parking"

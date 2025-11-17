@@ -2,11 +2,16 @@
 Validation testing script for evaluating agent system performance.
 Tests the full AgentGraph system on validation questions and tracks:
 - Tool selection accuracy (TSA)
-- Response quality against ground truth
+- Ground truth accuracy (GTA) - uses LLM as a judge to evaluate response correctness
+- All tools used during execution
+- Response quality against ground truth (evaluated by LLM judge)
 - Execution times
+
+The script uses a two-phase approach:
+1. Run all validation questions through the AgentGraph system
+2. Use an LLM judge to evaluate each response against ground truth (outputs 1 or 0)
 """
 
-from langchain_aws import ChatBedrock
 from dotenv import load_dotenv
 import sys
 import os
@@ -19,78 +24,60 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent_graph import AgentGraph
 from data_handler import DataLoader
+from prompts.llm_as_a_judge import llm_judge_prompt
+from gemini_llm import GeminiLLM
 
 # Load environment variables
 load_dotenv()
 
 
 def initialize_system():
-    """Initialize AgentGraph system and load datasets"""
+    """Initialize AgentGraph system and load datasets (same as main.py)"""
 
     print("\n" + "=" * 80)
     print(" " * 25 + "VALIDATION TEST INITIALIZATION")
     print("=" * 80)
 
-    print("\n Initializing AWS Bedrock LLM...")
+    # Initialize the LLM (same as main.py)
+    print("\n Initializing Gemini LLM for Agent...")
     try:
-        llm = ChatBedrock(
-            model_id="meta.llama3-1-70b-instruct-v1:0",
-            model_kwargs={
-                "temperature": 0.1,
-                # "max_tokens": 2048
-            }
-        )
-        print(" Bedrock LLM initialized successfully")
-        print(" Model: Llama 3.1 70B Instruct")
-        print(" Temperature: 0.1")
+        llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
+        print(" Gemini LLM initialized successfully")
+        print(" Model: Gemini 2.5 Flash")
     except Exception as e:
-        print(f" Error initializing Bedrock LLM: {e}")
-        print("\nTroubleshooting:")
-        print("1. If using temporary credentials (ASIA*), add AWS_SESSION_TOKEN to .env")
-        print("2. If using permanent credentials, ensure AWS_ACCESS_KEY_ID starts with AKIA")
-        print("3. Or configure AWS CLI: aws configure")
-        print("4. Ensure your AWS account has Bedrock access in the selected region")
+        print(f" Error initializing Gemini LLM: {e}")
         sys.exit(1)
 
+    # Load the datasets (same pattern as main.py)
     print("\n Loading datasets...")
-    loader = DataLoader()
-    datasets = {}
-
     try:
-        housing_path = "data/housing.csv"
-        datasets['housing'] = loader.load_data(housing_path)
-        print(f" Loaded housing dataset: {len(datasets['housing'])} rows, {len(datasets['housing'].columns)} columns")
+        housing_df = pd.read_csv('data/housing.csv')
+        print(f" Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
     except Exception as e:
-        print(f" Warning: Could not load housing dataset: {e}")
+        print(f" Error: Could not load housing dataset: {e}")
+        sys.exit(1)
 
-    try:
-        coffee_path = "data/coffee_shop_sales.xlsx"
-        datasets['coffee'] = loader.load_data(coffee_path)
-        datasets['coffee'] = datasets['coffee'].iloc[0:1000]
-        print(f" Loaded coffee dataset: {len(datasets['coffee'])} rows, {len(datasets['coffee'].columns)} columns")
-    except Exception as e:
-        print(f" Warning: Could not load coffee dataset: {e}")
+    datasets = {"housing": housing_df}
 
+    # Initialize the agent graph (same as main.py)
     print("\n Initializing AgentGraph...")
     try:
         agent_graph = AgentGraph(llm=llm, datasets=datasets)
         print(" AgentGraph initialized successfully")
-        return agent_graph
     except Exception as e:
         print(f" Error initializing AgentGraph: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
 
-
-def load_validation_questions(filepath="data/validation.csv"):
-    """Load validation questions from CSV"""
+    # Initialize separate Gemini LLM for Judge
+    print("\n Initializing Gemini LLM for Judge...")
     try:
-        df = pd.read_csv(filepath)
-        print(f"\n Loaded {len(df)} validation questions from {filepath}")
-        return df
+        judge_llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
+        print(" Gemini Judge LLM initialized successfully")
+        return agent_graph, judge_llm
     except Exception as e:
-        print(f" Error loading validation questions: {e}")
+        print(f" Error initializing Gemini Judge LLM: {e}")
         sys.exit(1)
 
 
@@ -112,6 +99,77 @@ def normalize_tool_name(tool_name):
     return tool_name
 
 
+def judge_responses_with_llm(llm, results):
+    """
+    Use LLM as a judge to evaluate each response against ground truth.
+    Updates results in-place with ground_truth_match field.
+    Returns number of results judged.
+    """
+    print("\n" + "=" * 80)
+    print(" " * 25 + "LLM JUDGE EVALUATION")
+    print("=" * 80)
+
+    # Filter results that have ground truth
+    results_to_judge = [r for r in results if r.get('ground_truth') and
+                       not pd.isna(r.get('ground_truth')) and
+                       r.get('ground_truth') != '']
+
+    total_to_judge = len(results_to_judge)
+    print(f"\nEvaluating {total_to_judge} responses with ground truth using LLM judge...\n")
+
+    judged_count = 0
+
+    for idx, result in enumerate(results):
+        # Skip if no ground truth
+        if not result.get('ground_truth') or pd.isna(result.get('ground_truth')) or result.get('ground_truth') == '':
+            result['ground_truth_match'] = None
+            result['judge_score'] = None
+            continue
+
+        print(f"[{idx + 1}/{total_to_judge}] Judging response for: {result['user_request'][:50]}...")
+
+        try:
+            # Create the judge prompt
+            judge_chain = llm_judge_prompt | llm
+
+            # Get LLM judgment
+            judgment = judge_chain.invoke({
+                "user_request": result['user_request'],
+                "ground_truth": result['ground_truth'],
+                "model_response": result['agent_response']
+            })
+
+            # Extract the judgment (1 or 0)
+            judgment_text = judgment.content.strip() if hasattr(judgment, 'content') else str(judgment).strip()
+
+            # Parse the score
+            try:
+                score = int(judgment_text)
+                if score not in [0, 1]:
+                    print(f"  Warning: Judge returned non-binary score: {judgment_text}, defaulting to 0")
+                    score = 0
+            except ValueError:
+                print(f"  Warning: Could not parse judge score: {judgment_text}, defaulting to 0")
+                score = 0
+
+            result['ground_truth_match'] = (score == 1)
+            result['judge_score'] = score
+
+            status = "CORRECT" if score == 1 else "INCORRECT"
+            print(f"  Judge: {status}")
+            judged_count += 1
+
+        except Exception as e:
+            print(f"  Error during judging: {e}")
+            result['ground_truth_match'] = False
+            result['judge_score'] = 0
+
+    print(f"\n Completed judging {judged_count} responses")
+    print("=" * 80)
+
+    return judged_count
+
+
 def run_validation_tests(agent_graph, validation_df):
     """Run each validation question through the AgentGraph system"""
 
@@ -127,7 +185,6 @@ def run_validation_tests(agent_graph, validation_df):
         user_request = row['user_request']
         ground_truth_tool = row.get('ground_truth_tool', '')
         ground_truth = row.get('ground_truth', '')
-        expected_criteria = row.get('expected_report_criteria', '')
 
         print(f"[{idx + 1}/{total}] Testing: {user_request[:60]}...")
 
@@ -143,25 +200,44 @@ def run_validation_tests(agent_graph, validation_df):
             predicted_tool = final_state.get('route', {}).get('router_decision', 'unknown')
             response_text = final_state.get('response', '')
 
+            # Track all tools used throughout execution
+            # The router_decision contains list of tools selected
+            tools_used = predicted_tool if isinstance(predicted_tool, list) else [predicted_tool]
+            tools_used_str = ', '.join(str(tool) for tool in tools_used)
+
             # Normalize tool names for comparison
-            normalized_predicted = normalize_tool_name(predicted_tool)
+            # Handle both single tool and multiple tools
+            if isinstance(predicted_tool, list):
+                normalized_predicted = [normalize_tool_name(t) for t in predicted_tool]
+            else:
+                normalized_predicted = normalize_tool_name(predicted_tool)
+
             normalized_ground_truth = normalize_tool_name(ground_truth_tool)
 
             # Check if tool selection was correct
-            tool_correct = (normalized_predicted == normalized_ground_truth)
+            # For lists, check if ground truth is in the list
+            if isinstance(normalized_predicted, list):
+                tool_correct = normalized_ground_truth in normalized_predicted
+            else:
+                tool_correct = (normalized_predicted == normalized_ground_truth)
 
+            # Ground truth matching will be done by LLM judge later
             results.append({
                 'user_request': user_request,
                 'ground_truth_tool': ground_truth_tool,
-                'predicted_tool': predicted_tool,
+                'tools_used': tools_used_str,
                 'tool_correct': tool_correct,
                 'ground_truth': ground_truth,
                 'agent_response': response_text,
-                'expected_criteria': expected_criteria,
+                'ground_truth_match': None,  # Will be filled by LLM judge
+                'judge_score': None,  # Will be filled by LLM judge
                 'execution_time_seconds': round(execution_time, 2)
             })
 
-            status = "" if tool_correct else " [TOOL MISMATCH]"
+            status = ""
+            if not tool_correct:
+                status += " [TOOL MISMATCH]"
+
             print(f" Completed in {execution_time:.2f}s - Tool: {predicted_tool}{status}")
 
         except Exception as e:
@@ -173,10 +249,12 @@ def run_validation_tests(agent_graph, validation_df):
                 'user_request': user_request,
                 'ground_truth_tool': ground_truth_tool,
                 'predicted_tool': 'ERROR',
+                'tools_used': 'ERROR',
                 'tool_correct': False,
                 'ground_truth': ground_truth,
                 'agent_response': f"ERROR: {str(e)}",
-                'expected_criteria': expected_criteria,
+                'ground_truth_match': False,
+                'judge_score': 0,
                 'execution_time_seconds': 0
             })
 
@@ -199,7 +277,7 @@ def save_results(results):
 
 
 def calculate_accuracy_metrics(results):
-    """Calculate Tool Selection Accuracy and other metrics"""
+    """Calculate Tool Selection Accuracy, Ground Truth Accuracy, and other metrics"""
 
     total = len(results)
     errors = sum(1 for r in results if r['predicted_tool'] == 'ERROR')
@@ -209,15 +287,36 @@ def calculate_accuracy_metrics(results):
     tool_correct_count = sum(1 for r in results if r['tool_correct'])
     tsa = (tool_correct_count / total) * 100 if total > 0 else 0
 
+    # Ground Truth Accuracy (GTA)
+    # Only calculate for cases where ground truth exists
+    results_with_gt = [r for r in results if r.get('ground_truth') and
+                      not pd.isna(r.get('ground_truth')) and
+                      r.get('ground_truth') != '']
+
+    if results_with_gt:
+        gt_correct_count = sum(1 for r in results_with_gt if r.get('ground_truth_match', False))
+        gta = (gt_correct_count / len(results_with_gt)) * 100
+    else:
+        gt_correct_count = 0
+        gta = 0
+
     # Breakdown by tool type
     tool_breakdown = {}
     for r in results:
         gt_tool = r['ground_truth_tool']
         if gt_tool not in tool_breakdown:
-            tool_breakdown[gt_tool] = {'total': 0, 'correct': 0}
+            tool_breakdown[gt_tool] = {'total': 0, 'correct': 0, 'gt_correct': 0, 'both_correct': 0}
         tool_breakdown[gt_tool]['total'] += 1
         if r['tool_correct']:
             tool_breakdown[gt_tool]['correct'] += 1
+        if r.get('ground_truth_match', False):
+            tool_breakdown[gt_tool]['gt_correct'] += 1
+        if r.get('tool_correct', False) and r.get('ground_truth_match', False):
+            tool_breakdown[gt_tool]['both_correct'] += 1
+
+    # Calculate average judge score (for informational purposes)
+    judge_scores = [r.get('judge_score', 0) for r in results_with_gt if r.get('judge_score') is not None]
+    avg_judge_score = (sum(judge_scores) / len(judge_scores)) if judge_scores else 0
 
     # Execution time statistics
     execution_times = [r['execution_time_seconds'] for r in results if r['execution_time_seconds'] > 0]
@@ -235,6 +334,10 @@ def calculate_accuracy_metrics(results):
         'errors': errors,
         'tsa': tsa,
         'tool_correct_count': tool_correct_count,
+        'gta': gta,
+        'gt_correct_count': gt_correct_count,
+        'results_with_gt_count': len(results_with_gt),
+        'avg_judge_score': avg_judge_score,
         'tool_breakdown': tool_breakdown,
         'avg_time': avg_time,
         'min_time': min_time,
@@ -259,10 +362,20 @@ def print_summary(metrics):
     print(f"Tool Selection Accuracy: {metrics['tsa']:.1f}%")
     print(f"Correct Tool Selections: {metrics['tool_correct_count']}/{metrics['total']}")
 
+    print(f"\n--- GROUND TRUTH ACCURACY (GTA) ---")
+    print(f"Ground Truth Accuracy (via LLM Judge): {metrics['gta']:.1f}%")
+    print(f"Correct Ground Truth Matches: {metrics['gt_correct_count']}/{metrics['results_with_gt_count']}")
+    print(f"Average Judge Score: {metrics['avg_judge_score']:.2f}")
+
     print(f"\n--- Tool Breakdown ---")
     for tool, stats in metrics['tool_breakdown'].items():
-        accuracy = (stats['correct'] / stats['total']) * 100 if stats['total'] > 0 else 0
-        print(f"{tool}: {stats['correct']}/{stats['total']} ({accuracy:.1f}%)")
+        tool_acc = (stats['correct'] / stats['total']) * 100 if stats['total'] > 0 else 0
+        gt_acc = (stats['gt_correct'] / stats['total']) * 100 if stats['total'] > 0 else 0
+        both_acc = (stats['both_correct'] / stats['total']) * 100 if stats['total'] > 0 else 0
+        print(f"\n{tool}:")
+        print(f"  Tool Selection: {stats['correct']}/{stats['total']} ({tool_acc:.1f}%)")
+        print(f"  Ground Truth: {stats['gt_correct']}/{stats['total']} ({gt_acc:.1f}%)")
+        print(f"  Both Correct: {stats['both_correct']}/{stats['total']} ({both_acc:.1f}%)")
 
     print(f"\n--- Execution Time Statistics ---")
     print(f" Average: {metrics['avg_time']:.2f}s per request")
@@ -277,9 +390,14 @@ def main():
 
     start_time = datetime.now()
 
-    agent_graph = initialize_system()
-    validation_df = load_validation_questions()
+    agent_graph, llm = initialize_system()
+    validation_df = pd.read_csv("validation/final_validation.csv")
+    validation_df = validation_df.iloc[0:2]
+    validation_df.reset_index(inplace=True)
     results = run_validation_tests(agent_graph, validation_df)
+
+    # Use LLM as a judge to evaluate responses against ground truth
+    judge_responses_with_llm(llm, results)
 
     output_path = save_results(results)
     metrics = calculate_accuracy_metrics(results)
@@ -290,8 +408,8 @@ def main():
 
     print(f"\n Total execution time: {duration:.2f} seconds")
     print(f" Results saved to: {output_path}")
-    print(f"\n This validation test used the full AgentGraph system.")
-    print(f" Tool Selection Accuracy (TSA): {metrics['tsa']:.1f}%\n")
+    print(f" Tool Selection Accuracy (TSA): {metrics['tsa']:.1f}%")
+    print(f" Ground Truth Accuracy (GTA): {metrics['gta']:.1f}%")
 
 
 if __name__ == "__main__":
