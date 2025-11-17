@@ -1,54 +1,8 @@
 user_request,ground_truth_tool,ground_truth
-"⁠Build a regression model to predict house prices",run_regression()," **Model Performance (R² Score):** The Random Forest Regression model achieved an R² score of **0.4132**."
-"Create a machine learning model to predict the price of houses",run_regression()," **Model Performance (R² Score):** The Random Forest Regression model achieved an R² score of **0.4132**."
-"What features are most important for predicting house prices?",run_regression(),"   **Top 3 Most Important Features:**
-    *   **Area:** With an importance score of **0.7294**, 'area' is by far the most dominant predictor of house prices.
-    *   **Bathrooms:** The number of 'bathrooms' ranked as the second most important feature, with a score of **0.1819**.
-    *   **Bedrooms:** The number of 'bedrooms' was the third most influential feature, scoring **0.0886**.
-"
-"Train a prediction model for housing prices using all available features",run_regression(),"placeholder for now"
-"Can you predict house prices based on area, bedrooms, and bathrooms?",run_regression(),"placeholder for now"
-"Build a model to forecast property values",run_regression(),"placeholder for now"
-"Which variables have the strongest impact on house price predictions?",run_regression(),"placeholder for now"
-"⁠Develop a regression analysis to estimate housing costs",run_regression(),"placeholder for now"
-"First describe the housing data, then build a prediction model for prices",run_regression(),"placeholder for now"
-"Analyze the dataset and create a machine learning model to predict house values",run_regression(),"placeholder for now"
 Describe the housing dataset.,describe_data(),"545 rows × 13 columns
 6 numeric, 7 categorical
 0 missing values
 Quality score ≈ 10"
-What are the missing values in the housing dataset?,describe_data(),"All 13 columns have 0 missing values.
-Total missing % = 0%."
-Show basic statistics for all numeric columns.,describe_data(),"price mean ≈ 4.77M, median ≈ 4.34M
-area mean ≈ 5150.54, median ≈ 4600
-bedrooms mean ≈ 2.97, median ≈ 3.0
-Bathrooms mean ≈ 1.286, median ≈ 1.0
-Stories mean ≈ 1.80, median ≈2.0
-Parking mean ≈0.69 , median ≈ 0.0"
-What are the top 5 correlations in the housing data?,describe_data(),"price–area (0.536)
-price–bathrooms (0.518)
-price–stories (0.421)
-Bedrooms - stories (0.409)
-Parking - price (0.38)"
-List categorical columns and their top values.,describe_data(),"mainroad: yes (468), no (77)
-guestroom: no (448), yes (97)
-basement: no (354), yes (191)
-hotwaterheating: no (520), yes (25)
-airconditioning: no (373), yes (172)
-prefarea: no (417), yes (128)
-furnishingstatus: semi-furnished (227), unfurnished (178), furnished (140)"
-Show outlier analysis for price.,describe_data(),"Lower_bound : -35000.0
-Upper_bound : 9205000.0
-Count : 15 data points
-Percent : 2.75%
-up to 5 outlier examples:
-Index 0: Value 13300000.0
-Index 1: Value 12250000.0
-Index 2: Value 12250000.0
-Index 3: Value 12215000.0
-Index 4: Value 11410000.0"
-What is the data quality score of the housing dataset?,describe_data(),Quality score ≈ 10.0
-Which columns have high missing percentages?,describe_data(),None
 Show 3 sample rows from the dataset.,describe_data(),"| price | area | bedrooms | bathrooms | stories | mainroad | guestroom | basement |
 hotwaterheating | airconditioning | parking | prefarea | furnishingstatus |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -61,3 +15,75 @@ bedrooms
 bathrooms
 stories
 parking"
+"⁠Build a regression model to predict house prices",run_regression()," **Model Performance (R² Score):** The Random Forest Regression model achieved an R² score of **0.4132**."
+List categorical columns and their top values.,describe_data(),"mainroad: yes (468), no (77)
+guestroom: no (448), yes (97)
+basement: no (354), yes (191)
+hotwaterheating: no (520), yes (25)
+airconditioning: no (373), yes (172)
+prefarea: no (417), yes (128)
+furnishingstatus: semi-furnished (227), unfurnished (178), furnished (140)"
+"Create a machine learning model to predict the price of houses",run_regression()," **Model Performance (R² Score):** The Random Forest Regression model achieved an R² score of **0.6101**."
+"What features are most important for predicting the price of houses",run_regression(),"the most important features for predicting the number of bedrooms are:
+1.  **Area**
+2.  **Bathrooms**
+3.  **Parking**"
+What are the missing values in the housing dataset?,describe_data(),"All 13 columns have 0 missing values.
+Total missing % = 0%."
+Create a machine learning model to predict the number of bedrooms,run_regression(),The Random Forest Regression model achieved an R² score of **0.2665**
+"Train a prediction model for number of bathrooms in a house given all other features",run_regression(),"The Random Forest Regression model achieved an R² score of 0.1139. This low score suggests that the model explains approximately 11.39% of the variance in the number of bathrooms"
+"Can you give me some example parking data and also what is the most important factor in predicting the parking characteristics of a home",both,"*   **Sample Rows with Parking Information:**
+    *   Home 1: Price 13,300,000, Area 7420, Bedrooms 4, Bathrooms 2, Stories 3, **Parking: 2**
+    *   Home 2: Price 12,250,000, Area 8960, Bedrooms 4, Bathrooms 4, Stories 4, **Parking: 3**
+    *   Home 3: Price 12,250,000, Area 9960, Bedrooms 3, Bathrooms 2, Stories 2, **Parking: 2**
+
+*   **Summary Statistics for Parking:**
+    *   **Count:** 545 homes
+    *   **Mean:** 0.69 (average parking spaces)
+    *   **Median:** 0.0 (half of the homes have 0 parking spaces)
+    *   **Standard Deviation:** 0.86
+    *   **Minimum:** 0 parking spaces
+    *   **25th Percentile:** 0.0 parking spaces
+    *   **75th Percentile:** 1.0 parking space
+    *   **Maximum:** 3 parking spaces
+
+The **price of the home** is the most important factor in predicting the number of parking spaces"
+What features are most important for predicting number of bedrooms?,run_regression(),"the most important features for predicting the number of bedrooms are:
+1.  **Stories**
+2.  **Price**
+3.  **Area**"
+"What features are most important for predicting the number of bathrooms in a house?",run_regression(),"the most important features for predicting the number of bedrooms are:
+1.  **Price**
+2.  **Area**
+3.  **Bedrooms**"
+Show basic statistics for all numeric columns.,describe_data(),"price mean ≈ 4.77M, median ≈ 4.34M
+area mean ≈ 5150.54, median ≈ 4600
+bedrooms mean ≈ 2.97, median ≈ 3.0
+Bathrooms mean ≈ 1.286, median ≈ 1.0
+Stories mean ≈ 1.80, median ≈2.0
+Parking mean ≈0.69 , median ≈ 0.0"
+"What are the top 5 correlations in the housing data and also what is the most important factor in predicting a house price",both," **Top 5 Correlations:**
+    *   `area` and `price`: 0.54 (Strong positive correlation)
+    *   `bathrooms` and `price`: 0.52 (Strong positive correlation)
+    *   `price` and `stories`: 0.42 (Moderate positive correlation)
+    *   `bedrooms` and `stories`: 0.41 (Moderate positive correlation)
+    *   `parking` and `price`: 0.38 (Moderate positive correlation)
+
+The model achieved an R² score of 0.6101, indicating that approximately 61% of the variance in house prices can be explained by the features included in the model."
+Show outlier analysis for price.,describe_data(),"Lower_bound : -35000.0
+Upper_bound : 9205000.0
+Count : 15 data points
+Percent : 2.75%
+up to 5 outlier examples:
+Index 0: Value 13300000.0
+Index 1: Value 12250000.0
+Index 2: Value 12250000.0
+Index 3: Value 12215000.0
+Index 4: Value 11410000.0"
+What are the top 5 correlations in the housing data?,describe_data(),"price–area (0.536)
+price–bathrooms (0.518)
+price–stories (0.421)
+Bedrooms - stories (0.409)
+Parking - price (0.38)"
+What is the data quality score of the housing dataset?,describe_data(),Quality score ≈ 10.0
+Which columns have high missing percentages?,describe_data(),None

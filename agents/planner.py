@@ -65,9 +65,17 @@ class Planner:
             
         planner_agent = planner_prompt | self.llm
         raw_result = planner_agent.invoke({"input": user_request, "tools": self.tools})
-        
+
+        # Extract text from response (handle both Gemini string and Bedrock AIMessage)
+        if hasattr(raw_result, 'content'):
+            # Bedrock/LangChain returns AIMessage object with .content attribute
+            result_text = raw_result.content
+        else:
+            # Gemini wrapper returns string directly
+            result_text = str(raw_result)
+
         # Manually parse the JSON from the raw string
-        json_result = extract_json_from_string(raw_result)
+        json_result = extract_json_from_string(result_text)
         
         if json_result is None:
             # Fallback or error handling if JSON parsing fails

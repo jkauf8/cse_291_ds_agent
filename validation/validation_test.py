@@ -18,6 +18,7 @@ import os
 import pandas as pd
 from datetime import datetime
 import time
+import argparse
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,29 +27,43 @@ from agent_graph import AgentGraph
 from data_handler import DataLoader
 from prompts.llm_as_a_judge import llm_judge_prompt
 from gemini_llm import GeminiLLM
+from langchain_aws import ChatBedrock
 
 # Load environment variables
 load_dotenv()
 
 
-def initialize_system():
+def initialize_system(use_bedrock=False):
     """Initialize AgentGraph system and load datasets (same as main.py)"""
 
     print("\n" + "=" * 80)
     print(" " * 25 + "VALIDATION TEST INITIALIZATION")
     print("=" * 80)
 
-    # Initialize the LLM (same as main.py)
-    print("\n Initializing Gemini LLM for Agent...")
-    try:
-        llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
-        print(" Gemini LLM initialized successfully")
-        print(" Model: Gemini 2.5 Flash")
-    except Exception as e:
-        print(f" Error initializing Gemini LLM: {e}")
-        sys.exit(1)
+    if use_bedrock:
+        print("\n Initializing AWS Bedrock LLM for Agent...")
+        try:
+            llm = ChatBedrock(
+                model_id="meta.llama3-1-70b-instruct-v1:0",
+                model_kwargs={
+                    "temperature": 0.1,
+                }
+            )
+            print(" Bedrock LLM initialized successfully")
+            print(" Model: Llama 3.1 70B Instruct")
+        except Exception as e:
+            print(f" Error initializing Bedrock LLM: {e}")
+            sys.exit(1)
+    else:
+        print("\n Initializing Gemini LLM for Agent...")
+        try:
+            llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
+            print(" Gemini LLM initialized successfully")
+            print(" Model: Gemini 2.5 Flash")
+        except Exception as e:
+            print(f" Error initializing Gemini LLM: {e}")
+            sys.exit(1)
 
-    # Load the datasets (same pattern as main.py)
     print("\n Loading datasets...")
     try:
         housing_df = pd.read_csv('data/housing.csv')
@@ -59,7 +74,6 @@ def initialize_system():
 
     datasets = {"housing": housing_df}
 
-    # Initialize the agent graph (same as main.py)
     print("\n Initializing AgentGraph...")
     try:
         agent_graph = AgentGraph(llm=llm, datasets=datasets)
@@ -70,25 +84,59 @@ def initialize_system():
         traceback.print_exc()
         sys.exit(1)
 
-    # Initialize separate Gemini LLM for Judge
-    print("\n Initializing Gemini LLM for Judge...")
-    try:
-        judge_llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
-        print(" Gemini Judge LLM initialized successfully")
-        return agent_graph, judge_llm
-    except Exception as e:
-        print(f" Error initializing Gemini Judge LLM: {e}")
-        sys.exit(1)
+    if use_bedrock:
+        print("\n Initializing Bedrock LLM for Judge...")
+        try:
+            judge_llm = ChatBedrock(
+                model_id="meta.llama3-1-70b-instruct-v1:0",
+                model_kwargs={
+                    "temperature": 0.1,
+                }
+            )
+            print(" Bedrock Judge LLM initialized successfully")
+        except Exception as e:
+            print(f" Error initializing Bedrock Judge LLM: {e}")
+            sys.exit(1)
+    else:
+        print("\n Initializing Gemini LLM for Judge...")
+        try:
+            judge_llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
+            print(" Gemini Judge LLM initialized successfully")
+        except Exception as e:
+            print(f" Error initializing Gemini Judge LLM: {e}")
+            sys.exit(1)
+
+    return agent_graph, judge_llm
 
 
 def normalize_tool_name(tool_name):
-    """Normalize tool names for comparison"""
+    """
+    Normalize tool names for comparison.
+    If it's a list with both describe and regression, return 'both' to match CSV.
+    """
+    # Check if it's a list FIRST, before doing pd.isna() or string comparison
+    if isinstance(tool_name, list):
+        has_describe = any('describe' in str(t).lower() for t in tool_name)
+        has_regression = any('regression' in str(t).lower() or 'regress' in str(t).lower() for t in tool_name)
+        if has_describe and has_regression:
+            return 'both'
+        # If only one type, return the single normalized tool
+        elif has_describe:
+            return 'describe_data()'
+        elif has_regression:
+            return 'run_regression()'
+
+    # Now check for None/empty after handling lists
     if pd.isna(tool_name) or tool_name == "":
         return None
 
     tool_name = str(tool_name).strip().lower()
 
-    # Standardize tool names
+    # If already "both", keep it as both
+    if tool_name == 'both':
+        return 'both'
+
+    # Standardize single tool names
     if 'describe' in tool_name:
         return 'describe_data()'
     elif 'regression' in tool_name or 'regress' in tool_name:
@@ -197,29 +245,21 @@ def run_validation_tests(agent_graph, validation_df):
             execution_time = time.time() - start_time
 
             # Extract results from state
-            predicted_tool = final_state.get('route', {}).get('router_decision', 'unknown')
+            # Use selected_tools which persists from planner, not route which gets overwritten by reviewer
+            predicted_tool = final_state.get('selected_tools', 'unknown')
             response_text = final_state.get('response', '')
 
             # Track all tools used throughout execution
-            # The router_decision contains list of tools selected
             tools_used = predicted_tool if isinstance(predicted_tool, list) else [predicted_tool]
             tools_used_str = ', '.join(str(tool) for tool in tools_used)
 
             # Normalize tool names for comparison
-            # Handle both single tool and multiple tools
-            if isinstance(predicted_tool, list):
-                normalized_predicted = [normalize_tool_name(t) for t in predicted_tool]
-            else:
-                normalized_predicted = normalize_tool_name(predicted_tool)
-
+            # normalize_tool_name handles lists and returns 'both' if both tools present
+            normalized_predicted = normalize_tool_name(predicted_tool)
             normalized_ground_truth = normalize_tool_name(ground_truth_tool)
 
-            # Check if tool selection was correct
-            # For lists, check if ground truth is in the list
-            if isinstance(normalized_predicted, list):
-                tool_correct = normalized_ground_truth in normalized_predicted
-            else:
-                tool_correct = (normalized_predicted == normalized_ground_truth)
+            # Check if tool selection was correct (simple string comparison now)
+            tool_correct = (normalized_predicted == normalized_ground_truth)
 
             # Ground truth matching will be done by LLM judge later
             results.append({
@@ -248,7 +288,6 @@ def run_validation_tests(agent_graph, validation_df):
             results.append({
                 'user_request': user_request,
                 'ground_truth_tool': ground_truth_tool,
-                'predicted_tool': 'ERROR',
                 'tools_used': 'ERROR',
                 'tool_correct': False,
                 'ground_truth': ground_truth,
@@ -280,7 +319,7 @@ def calculate_accuracy_metrics(results):
     """Calculate Tool Selection Accuracy, Ground Truth Accuracy, and other metrics"""
 
     total = len(results)
-    errors = sum(1 for r in results if r['predicted_tool'] == 'ERROR')
+    errors = sum(1 for r in results if r['tools_used'] == 'ERROR')
     successful = total - errors
 
     # Tool Selection Accuracy (TSA)
@@ -387,13 +426,22 @@ def print_summary(metrics):
 
 def main():
     """Main execution function"""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Validation testing for agent system")
+    parser.add_argument(
+        '--bedrock',
+        action='store_true',
+        help='Use AWS Bedrock Llama instead of Gemini'
+    )
+    args = parser.parse_args()
 
     start_time = datetime.now()
 
-    agent_graph, llm = initialize_system()
+    agent_graph, llm = initialize_system(use_bedrock=args.bedrock)
     validation_df = pd.read_csv("validation/final_validation.csv")
-    validation_df = validation_df.iloc[0:2]
-    validation_df.reset_index(inplace=True)
+    # validation_df = validation_df.iloc[13:16]
+    # validation_df.reset_index(inplace=True)
+
     results = run_validation_tests(agent_graph, validation_df)
 
     # Use LLM as a judge to evaluate responses against ground truth
@@ -408,6 +456,9 @@ def main():
 
     print(f"\n Total execution time: {duration:.2f} seconds")
     print(f" Results saved to: {output_path}")
+
+    llm_type = "Bedrock Llama 3.1 70B" if args.bedrock else "Gemini 2.5 Flash"
+    print(f" LLM: {llm_type} (both agent and judge)")
     print(f" Tool Selection Accuracy (TSA): {metrics['tsa']:.1f}%")
     print(f" Ground Truth Accuracy (GTA): {metrics['gta']:.1f}%")
 

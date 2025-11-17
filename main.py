@@ -1,11 +1,13 @@
 """
 Main script with chatbot-like interface using AgentGraph.
 Allows interactive conversation with the data science agent.
+Supports both Gemini and AWS Bedrock LLMs.
 """
 
 import pandas as pd
 from agent_graph import AgentGraph
 from gemini_llm import GeminiLLM
+from langchain_aws import ChatBedrock
 import os
 import argparse
 from dotenv import load_dotenv
@@ -67,11 +69,31 @@ def main():
         action='store_true',
         help='Run in interactive mode (ask your own questions)'
     )
+    parser.add_argument(
+        '--bedrock',
+        action='store_true',
+        help='Use AWS Bedrock Llama instead of Gemini'
+    )
     args = parser.parse_args()
 
-    # Initialize the LLM
-    print("Initializing Gemini LLM...")
-    llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
+    if args.bedrock:
+        print("Initializing AWS Bedrock LLM...")
+        try:
+            llm = ChatBedrock(
+                model_id="meta.llama3-1-70b-instruct-v1:0",
+                model_kwargs={
+                    "temperature": 0.1,
+                }
+            )
+            print("Bedrock LLM initialized successfully")
+            print("Model: Llama 3.1 70B Instruct")
+        except Exception as e:
+            print(f"Error initializing Bedrock LLM: {e}")
+            return
+    else:
+        print("Initializing Gemini LLM...")
+        llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
+        print("Gemini LLM initialized successfully")
 
     # Load the dataset
     print("Loading housing dataset...")

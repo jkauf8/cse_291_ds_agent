@@ -40,4 +40,11 @@ class FinalReporter:
             "user_question": user_question,
             "tool_result": tool_result
         })
-        return result
+
+        # Extract text from response (handle both Gemini string and Bedrock AIMessage)
+        if hasattr(result, 'content'):
+            # Bedrock/LangChain returns AIMessage object with .content attribute
+            return result.content
+        else:
+            # Gemini wrapper returns string directly
+            return str(result)

@@ -17,6 +17,8 @@ class State(TypedDict):
     dataset_name: str
     target_column: str
     feature_columns: list
+    selected_tools: list  # Tools selected by planner (persists even when reviewer changes route)
+    planner_iteration_count: int  # Track how many times planner has been called to prevent loops
 
 
 class AgentGraph:
@@ -70,14 +72,21 @@ class AgentGraph:
 
     def planner_agent(self, state: State):
         """Planner agent - analyzes user question and selects appropriate tool"""
-        print("Planner: deciding tool to use...")
+        # Increment planner iteration counter
+        current_iteration = state.get('planner_iteration_count', 0) + 1
+        state['planner_iteration_count'] = current_iteration
+
+        print(f"Planner: deciding tool to use... (iteration {current_iteration})")
 
         question = state.get('question', '')
 
         planner_result = self.planner.plan(question)
-        
+
         selected_tools = planner_result.get("tools", [])
         state['route'] = {'router_decision': selected_tools}
+
+        # Store the selected tools separately so they don't get overwritten by reviewer
+        state['selected_tools'] = selected_tools
 
         # Store planner results in state
         state['dataset_name'] = planner_result.get("dataset")
@@ -93,6 +102,17 @@ class AgentGraph:
     def review_agent(self, state: State):
         """Review agent - reviews tool results and decides next steps"""
         print("Reviewer: deciding to construct final report or call planner again...")
+
+        # Check iteration count to prevent infinite loops
+        max_iterations = 2
+        current_iteration = state.get('planner_iteration_count', 0)
+
+        # If we've already called the planner max_iterations times, force final report
+        if current_iteration >= max_iterations:
+            print(f"Reviewer: Maximum planner iterations ({max_iterations}) reached. Forcing final report.")
+            state['route'] = {'router_decision': 'final_reporter'}
+            print(f"Reviewer decision: {state['route']}")
+            return state
 
         question = state.get('question', '')
         tool_result = state.get('tool_result', [])
@@ -295,7 +315,9 @@ class AgentGraph:
             'response': '',
             'message_history': [],
             'route': {},
-            'tool_result': None
+            'tool_result': None,
+            'selected_tools': [],
+            'planner_iteration_count': 0
         }
 
         result = self.app.invoke(initial_state)
