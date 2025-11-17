@@ -34,10 +34,12 @@ def main():
     # Initialize the agent graph
     agent = AgentGraph(llm=llm, datasets=datasets)
 
-    # Define the queries
+    # Define the queries - testing different target variables
     queries = [
         {"type": "describe", "question": "Can you describe the housing dataset for me?"},
-        {"type": "regression", "question": "Build a regression model to predict the price of houses."},
+        {"type": "regression_price", "question": "Build a regression model to predict the price of houses."},
+        {"type": "regression_area", "question": "Can you predict the area of houses based on other features?"},
+        {"type": "regression_bedrooms", "question": "Build a regression model to predict the number of bedrooms."},
         {"type": "both", "question": "First, describe the housing dataset, and then create a regression model to predict prices."}
     ]
 
