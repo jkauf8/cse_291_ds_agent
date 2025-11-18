@@ -87,3 +87,9 @@ Bedrooms - stories (0.409)
 Parking - price (0.38)"
 What is the data quality score of the housing dataset?,describe_data(),Quality score ≈ 10.0
 Which columns have high missing percentages?,describe_data(),None
+What features are most important for predicting how many stories there are in a house,run_regression(),"the most important features for predicting the number of stories in a house are:
+1.  **Price:** The most dominant factor, indicating that more expensive houses tend to have more stories.
+2.  **Area:** The total living area of the house is also a significant predictor, as larger homes often require more stories to accommodate their size.
+3.  **Bedrooms:** The number of bedrooms correlates with the overall size and potential story count of a house.
+4.  **Basement presence/absence:** Whether a house has a basement or not also contributes to predicting its story count, likely due to correlations with overall structural design or footprint.
+"

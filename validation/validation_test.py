@@ -24,7 +24,7 @@ import argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent_graph import AgentGraph
-from data_handler import DataLoader
+from code.data.data_handler import DataLoader
 from prompts.llm_as_a_judge import llm_judge_prompt
 from gemini_llm import GeminiLLM
 from langchain_aws import ChatBedrock

@@ -10,11 +10,12 @@ load_dotenv()
 
 class GeminiLLM(LLM):
     """Custom LLM wrapper for Google Gemini models."""
-    
+
     model_name: str = "gemini-2.5-flash"
     api_key: Optional[str] = None
     temperature: float = 0.7
-    
+    max_output_tokens: Optional[int] = None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # Configure the API
@@ -36,7 +37,17 @@ class GeminiLLM(LLM):
     ) -> str:
         """Call the Gemini API."""
         try:
-            response = self._genai_model.generate_content(prompt)
+            # Build generation config
+            generation_config = genai.GenerationConfig(
+                temperature=self.temperature
+            )
+            if self.max_output_tokens is not None:
+                generation_config.max_output_tokens = self.max_output_tokens
+
+            response = self._genai_model.generate_content(
+                prompt,
+                generation_config=generation_config
+            )
             return response.text
         except Exception as e:
             return f"Error generating response: {str(e)}"

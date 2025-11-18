@@ -1,0 +1,21 @@
+user_request,ground_truth
+"What features are most important for predicting the price of houses","the most important features for predicting the number of bedrooms are:
+1.  **Area**
+2.  **Bathrooms**
+3.  **Parking**"
+"What features are most important for predicting if a house has parking","Based on the Random Forest Regression model, the most important features for predicting if a house has parking are **area** and **price**."
+What features are most important for predicting number of bedrooms?,"the most important features for predicting the number of bedrooms are:
+1.  **Stories**
+2.  **Price**
+3.  **Area**"
+"What features are most important for predicting the number of bathrooms in a house?","the most important features for predicting the number of bedrooms are:
+1.  **Price**
+2.  **Area**
+3.  **Bedrooms**"
+What features are most important for predicting how many stories there are in a house,"the most important features for predicting the number of stories in a house are:
+1.  **Price:** The most dominant factor, indicating that more expensive houses tend to have more stories.
+2.  **Area:** The total living area of the house is also a significant predictor, as larger homes often require more stories to accommodate their size.
+3.  **Bedrooms:** The number of bedrooms correlates with the overall size and potential story count of a house.
+4.  **Basement presence/absence:** Whether a house has a basement or not also contributes to predicting its story count, likely due to correlations with overall structural design or footprint.
+"
+What features are most important for predicting what area a house is in,"Price, parking and stories are most important"
