@@ -1,17 +1,3 @@
-"""
-Validation testing script for evaluating agent system performance.
-Tests the full AgentGraph system on validation questions and tracks:
-- Tool selection accuracy (TSA)
-- Ground truth accuracy (GTA) - uses LLM as a judge to evaluate response correctness
-- All tools used during execution
-- Response quality against ground truth (evaluated by LLM judge)
-- Execution times
-
-The script uses a two-phase approach:
-1. Run all validation questions through the AgentGraph system
-2. Use an LLM judge to evaluate each response against ground truth (outputs 1 or 0)
-"""
-
 from dotenv import load_dotenv
 import sys
 import os
@@ -24,7 +10,6 @@ import argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent_graph import AgentGraph
-from code.data.data_handler import DataLoader
 from prompts.llm_as_a_judge import llm_judge_prompt
 from gemini_llm import GeminiLLM
 from langchain_aws import ChatBedrock
@@ -438,7 +423,7 @@ def main():
     start_time = datetime.now()
 
     agent_graph, llm = initialize_system(use_bedrock=args.bedrock)
-    validation_df = pd.read_csv("validation/final_validation.csv")
+    validation_df = pd.read_csv("data/final_validation.csv")
     # validation_df = validation_df.iloc[13:16]
     # validation_df.reset_index(inplace=True)
 
