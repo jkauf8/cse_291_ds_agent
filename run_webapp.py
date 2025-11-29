@@ -114,11 +114,11 @@ def create_gradio_app(agent_graph: AgentGraph, llm_name: str):
     # --- Create the Gradio Interface ---
     print("Creating Gradio interface...")
     title_llm = "Bedrock Llama 3.1 70B" if "Bedrock" in llm_name else "Gemini 2.5 Flash"
-
+    title_llm = ""
     iface = gr.ChatInterface(
         fn=chat_response,
-        title=f"Data Science Agent ({title_llm})",
-        description="Ask questions about the **housing dataset** and get a comprehensive analysis.",
+        title=f"Data Science Agent",
+        description="Ask questions about a dataset and get a comprehensive analysis.",
         examples=[
             "Can you describe the housing dataset for me?",
             "Build a regression model to predict the price of houses.",
