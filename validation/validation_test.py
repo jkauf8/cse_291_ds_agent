@@ -69,27 +69,23 @@ def initialize_system(use_bedrock=False):
         traceback.print_exc()
         sys.exit(1)
 
+    # Always use Gemini for the judge (regardless of --bedrock flag)
+    print("\n Initializing Gemini LLM for Judge...")
+    print(" Note: Judge always uses Gemini for consistent evaluation")
+    try:
+        judge_llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
+        print("Gemini Judge LLM initialized successfully")
+        print("Model: Gemini 2.5 Flash")
+    except Exception as e:
+        print(f"Error initializing Gemini Judge LLM: {e}")
+        sys.exit(1)
+
+    print("\n" + "=" * 80)
     if use_bedrock:
-        print("\n Initializing Bedrock LLM for Judge...")
-        try:
-            judge_llm = ChatBedrock(
-                model_id="meta.llama3-1-70b-instruct-v1:0",
-                model_kwargs={
-                    "temperature": 0.1,
-                }
-            )
-            print(" Bedrock Judge LLM initialized successfully")
-        except Exception as e:
-            print(f" Error initializing Bedrock Judge LLM: {e}")
-            sys.exit(1)
+        print("CONFIGURATION: Agent = Bedrock Llama 3.1 70B | Judge = Gemini 2.5 Flash")
     else:
-        print("\n Initializing Gemini LLM for Judge...")
-        try:
-            judge_llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
-            print(" Gemini Judge LLM initialized successfully")
-        except Exception as e:
-            print(f" Error initializing Gemini Judge LLM: {e}")
-            sys.exit(1)
+        print("CONFIGURATION: Agent = Gemini 2.5 Flash | Judge = Gemini 2.5 Flash")
+    print("=" * 80)
 
     return agent_graph, judge_llm
 
@@ -442,8 +438,11 @@ def main():
     print(f"\n Total execution time: {duration:.2f} seconds")
     print(f" Results saved to: {output_path}")
 
-    llm_type = "Bedrock Llama 3.1 70B" if args.bedrock else "Gemini 2.5 Flash"
-    print(f" LLM: {llm_type} (both agent and judge)")
+    agent_llm_type = "Bedrock Llama 3.1 70B" if args.bedrock else "Gemini 2.5 Flash"
+    judge_llm_type = "Gemini 2.5 Flash"  # Always Gemini for judge
+
+    print(f" Agent LLM: {agent_llm_type}")
+    print(f" Judge LLM: {judge_llm_type}")
     print(f" Tool Selection Accuracy (TSA): {metrics['tsa']:.1f}%")
     print(f" Ground Truth Accuracy (GTA): {metrics['gta']:.1f}%")
 

@@ -277,3 +277,7 @@ if current_iteration >= max_iterations:
 - **Target**: `price` (continuous)
 - **Features**: Area, bedrooms, bathrooms, stories, parking, etc.
 - **Use Case**: Predicting house prices based on property characteristics
+
+
+## LLM Usage
+LLMs were utilized in the general-purpose assistance of this project and code development. LLM was used to explore conceptual ideas, provide guidance, and with assistance in code development and debugging. All LLM-generated content was reviewed and modified for understanding and accuracy.
