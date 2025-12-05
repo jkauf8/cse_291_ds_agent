@@ -145,7 +145,6 @@ class AgentGraph:
 
     def describe_data_tool(self, state: State):
         """Tool to describe the dataset"""
-        # TODO: Implement actual data description logic
         print("DescribeData: running dataset description...")
 
         question = state.get('question', '') or ''

@@ -6,7 +6,6 @@ from datetime import datetime
 import time
 import argparse
 
-# Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agent_graph import AgentGraph
@@ -14,16 +13,13 @@ from prompts.llm_as_a_judge import llm_judge_prompt
 from gemini_llm import GeminiLLM
 from langchain_aws import ChatBedrock
 
-# Load environment variables
 load_dotenv()
 
 
 def initialize_system(use_bedrock=False):
     """Initialize AgentGraph system and load datasets (same as main.py)"""
 
-    print("\n" + "=" * 80)
-    print(" " * 25 + "VALIDATION TEST INITIALIZATION")
-    print("=" * 80)
+    print("VALIDATION TEST")
 
     if use_bedrock:
         print("\n Initializing AWS Bedrock LLM for Agent...")
@@ -34,27 +30,27 @@ def initialize_system(use_bedrock=False):
                     "temperature": 0.1,
                 }
             )
-            print(" Bedrock LLM initialized successfully")
-            print(" Model: Llama 3.1 70B Instruct")
+            print("Bedrock LLM initialized successfully")
+            print("Model: Llama 3.1 70B Instruct")
         except Exception as e:
-            print(f" Error initializing Bedrock LLM: {e}")
+            print(f"Error initializing Bedrock LLM: {e}")
             sys.exit(1)
     else:
         print("\n Initializing Gemini LLM for Agent...")
         try:
             llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
-            print(" Gemini LLM initialized successfully")
-            print(" Model: Gemini 2.5 Flash")
+            print("Gemini LLM initialized successfully")
+            print("Model: Gemini 2.5 Flash")
         except Exception as e:
-            print(f" Error initializing Gemini LLM: {e}")
+            print(f"Error initializing Gemini LLM: {e}")
             sys.exit(1)
 
     print("\n Loading datasets...")
     try:
         housing_df = pd.read_csv('data/housing.csv')
-        print(f" Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
+        print(f"Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
     except Exception as e:
-        print(f" Error: Could not load housing dataset: {e}")
+        print(f"Error: Could not load housing dataset: {e}")
         sys.exit(1)
 
     datasets = {"housing": housing_df}
@@ -62,16 +58,16 @@ def initialize_system(use_bedrock=False):
     print("\n Initializing AgentGraph...")
     try:
         agent_graph = AgentGraph(llm=llm, datasets=datasets)
-        print(" AgentGraph initialized successfully")
+        print("AgentGraph initialized successfully")
     except Exception as e:
-        print(f" Error initializing AgentGraph: {e}")
+        print(f"Error initializing AgentGraph: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
 
-    # Always use Gemini for the judge (regardless of --bedrock flag)
+    # Always use Gemini for the judge (regardless of --bedrock arg)
     print("\n Initializing Gemini LLM for Judge...")
-    print(" Note: Judge always uses Gemini for consistent evaluation")
+    print("Note: Judge always uses Gemini for consistent evaluation")
     try:
         judge_llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
         print("Gemini Judge LLM initialized successfully")
@@ -85,7 +81,7 @@ def initialize_system(use_bedrock=False):
         print("CONFIGURATION: Agent = Bedrock Llama 3.1 70B | Judge = Gemini 2.5 Flash")
     else:
         print("CONFIGURATION: Agent = Gemini 2.5 Flash | Judge = Gemini 2.5 Flash")
-    print("=" * 80)
+
 
     return agent_graph, judge_llm
 
@@ -95,19 +91,16 @@ def normalize_tool_name(tool_name):
     Normalize tool names for comparison.
     If it's a list with both describe and regression, return 'both' to match CSV.
     """
-    # Check if it's a list FIRST, before doing pd.isna() or string comparison
     if isinstance(tool_name, list):
         has_describe = any('describe' in str(t).lower() for t in tool_name)
         has_regression = any('regression' in str(t).lower() or 'regress' in str(t).lower() for t in tool_name)
         if has_describe and has_regression:
             return 'both'
-        # If only one type, return the single normalized tool
         elif has_describe:
             return 'describe_data()'
         elif has_regression:
             return 'run_regression()'
 
-    # Now check for None/empty after handling lists
     if pd.isna(tool_name) or tool_name == "":
         return None
 
@@ -117,7 +110,6 @@ def normalize_tool_name(tool_name):
     if tool_name == 'both':
         return 'both'
 
-    # Standardize single tool names
     if 'describe' in tool_name:
         return 'describe_data()'
     elif 'regression' in tool_name or 'regress' in tool_name:
@@ -134,9 +126,8 @@ def judge_responses_with_llm(llm, results):
     Updates results in-place with ground_truth_match field.
     Returns number of results judged.
     """
-    print("\n" + "=" * 80)
-    print(" " * 25 + "LLM JUDGE EVALUATION")
-    print("=" * 80)
+    print("==================================")
+    print("LLM JUDGE EVALUATION")
 
     # Filter results that have ground truth
     results_to_judge = [r for r in results if r.get('ground_truth') and
@@ -144,7 +135,7 @@ def judge_responses_with_llm(llm, results):
                        r.get('ground_truth') != '']
 
     total_to_judge = len(results_to_judge)
-    print(f"\nEvaluating {total_to_judge} responses with ground truth using LLM judge...\n")
+    print(f"Evaluating {total_to_judge} responses with ground truth using LLM judge...\n")
 
     judged_count = 0
 
@@ -175,26 +166,25 @@ def judge_responses_with_llm(llm, results):
             try:
                 score = int(judgment_text)
                 if score not in [0, 1]:
-                    print(f"  Warning: Judge returned non-binary score: {judgment_text}, defaulting to 0")
+                    print(f"Warning: Judge returned non-binary score: {judgment_text}, defaulting to 0")
                     score = 0
             except ValueError:
-                print(f"  Warning: Could not parse judge score: {judgment_text}, defaulting to 0")
+                print(f"Warning: Could not parse judge score: {judgment_text}, defaulting to 0")
                 score = 0
 
             result['ground_truth_match'] = (score == 1)
             result['judge_score'] = score
 
             status = "CORRECT" if score == 1 else "INCORRECT"
-            print(f"  Judge: {status}")
+            print(f"Judge: {status}")
             judged_count += 1
 
         except Exception as e:
-            print(f"  Error during judging: {e}")
+            print(f"Error during judging: {e}")
             result['ground_truth_match'] = False
             result['judge_score'] = 0
 
-    print(f"\n Completed judging {judged_count} responses")
-    print("=" * 80)
+    print("Completed judging responses")
 
     return judged_count
 
@@ -205,10 +195,8 @@ def run_validation_tests(agent_graph, validation_df):
     results = []
     total = len(validation_df)
 
-    print("\n" + "=" * 80)
-    print(" " * 25 + "RUNNING VALIDATION TESTS")
-    print("=" * 80)
-    print(f"\nProcessing {total} questions with full AgentGraph system...\n")
+    print("RUNNING VALIDATION TESTS")
+    print(f"Processing {total} questions with full AgentGraph system...\n")
 
     for idx, row in validation_df.iterrows():
         user_request = row['user_request']
@@ -220,29 +208,21 @@ def run_validation_tests(agent_graph, validation_df):
         try:
             start_time = time.time()
 
-            # Run the agent graph
             final_state = agent_graph.run(user_request)
 
             execution_time = time.time() - start_time
 
-            # Extract results from state
-            # Use selected_tools which persists from planner, not route which gets overwritten by reviewer
             predicted_tool = final_state.get('selected_tools', 'unknown')
             response_text = final_state.get('response', '')
 
-            # Track all tools used throughout execution
             tools_used = predicted_tool if isinstance(predicted_tool, list) else [predicted_tool]
             tools_used_str = ', '.join(str(tool) for tool in tools_used)
 
-            # Normalize tool names for comparison
-            # normalize_tool_name handles lists and returns 'both' if both tools present
             normalized_predicted = normalize_tool_name(predicted_tool)
             normalized_ground_truth = normalize_tool_name(ground_truth_tool)
 
-            # Check if tool selection was correct (simple string comparison now)
             tool_correct = (normalized_predicted == normalized_ground_truth)
 
-            # Ground truth matching will be done by LLM judge later
             results.append({
                 'user_request': user_request,
                 'ground_truth_tool': ground_truth_tool,
@@ -250,8 +230,8 @@ def run_validation_tests(agent_graph, validation_df):
                 'tool_correct': tool_correct,
                 'ground_truth': ground_truth,
                 'agent_response': response_text,
-                'ground_truth_match': None,  # Will be filled by LLM judge
-                'judge_score': None,  # Will be filled by LLM judge
+                'ground_truth_match': None,
+                'judge_score': None,
                 'execution_time_seconds': round(execution_time, 2)
             })
 
@@ -308,7 +288,6 @@ def calculate_accuracy_metrics(results):
     tsa = (tool_correct_count / total) * 100 if total > 0 else 0
 
     # Ground Truth Accuracy (GTA)
-    # Only calculate for cases where ground truth exists
     results_with_gt = [r for r in results if r.get('ground_truth') and
                       not pd.isna(r.get('ground_truth')) and
                       r.get('ground_truth') != '']
@@ -320,7 +299,6 @@ def calculate_accuracy_metrics(results):
         gt_correct_count = 0
         gta = 0
 
-    # Breakdown by tool type
     tool_breakdown = {}
     for r in results:
         gt_tool = r['ground_truth_tool']
@@ -334,7 +312,7 @@ def calculate_accuracy_metrics(results):
         if r.get('tool_correct', False) and r.get('ground_truth_match', False):
             tool_breakdown[gt_tool]['both_correct'] += 1
 
-    # Calculate average judge score (for informational purposes)
+    # Calculate average judge score
     judge_scores = [r.get('judge_score', 0) for r in results_with_gt if r.get('judge_score') is not None]
     avg_judge_score = (sum(judge_scores) / len(judge_scores)) if judge_scores else 0
 
@@ -369,9 +347,8 @@ def calculate_accuracy_metrics(results):
 def print_summary(metrics):
     """Print summary statistics and accuracy metrics"""
 
-    print("\n" + "=" * 80)
-    print(" " * 30 + "TEST SUMMARY")
-    print("=" * 80)
+    print("\n\n")
+    print("TEST SUMMARY")
 
     print(f"\nTotal Questions: {metrics['total']}")
     print(f"Successful: {metrics['successful']}")
@@ -402,12 +379,10 @@ def print_summary(metrics):
     print(f" Minimum: {metrics['min_time']:.2f}s")
     print(f" Maximum: {metrics['max_time']:.2f}s")
     print(f" Total: {metrics['total_time']:.2f}s")
-    print("\n" + "=" * 80)
 
 
 def main():
     """Main execution function"""
-    # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Validation testing for agent system")
     parser.add_argument(
         '--bedrock',
@@ -439,7 +414,7 @@ def main():
     print(f" Results saved to: {output_path}")
 
     agent_llm_type = "Bedrock Llama 3.1 70B" if args.bedrock else "Gemini 2.5 Flash"
-    judge_llm_type = "Gemini 2.5 Flash"  # Always Gemini for judge
+    judge_llm_type = "Gemini 2.5 Flash"
 
     print(f" Agent LLM: {agent_llm_type}")
     print(f" Judge LLM: {judge_llm_type}")

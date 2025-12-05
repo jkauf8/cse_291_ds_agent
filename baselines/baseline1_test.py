@@ -19,9 +19,7 @@ load_dotenv()
 def initialize_system(use_bedrock=False, max_tokens=1024):
     """Initialize LLM (Gemini or Bedrock) and load housing dataset"""
 
-    print("\n" + "=" * 80)
-    print(" " * 25 + "BASELINE LLM INITIALIZATION")
-    print("=" * 80)
+    print("BASELINE LLM INITIALIZATION")
 
     if use_bedrock:
         print("\n Initializing AWS Bedrock LLM (base model, no agents)...")
@@ -33,19 +31,19 @@ def initialize_system(use_bedrock=False, max_tokens=1024):
                     "max_tokens": max_tokens,
                 }
             )
-            print(" Bedrock LLM initialized successfully")
-            print("   Model: Llama 3.1 70B Instruct")
-            print("   Temperature: 0.1")
-            print(f"   Max Tokens: {max_tokens}")
-            print("   Mode: Direct LLM invocation (no agent system)")
+            print("Bedrock LLM initialized successfully")
+            print("Model: Llama 3.1 70B Instruct")
+            print("Temperature: 0.1")
+            print(f"Max Tokens: {max_tokens}")
+            print("Mode: Direct LLM invocation (no agent system)")
         except Exception as e:
-            print(f" Error initializing Bedrock LLM: {e}")
-            print("\nTroubleshooting:")
+            print(f"Error initializing Bedrock LLM: {e}")
+            print("Troubleshooting:")
             print("1. Ensure AWS credentials are set in your .env file")
             print("2. Verify your AWS credentials have Bedrock access")
             sys.exit(1)
     else:
-        print("\n Initializing Gemini LLM (base model, no agents)...")
+        print("Initializing Gemini LLM (base model, no agents)...")
         try:
             llm = GeminiLLM(
                 model_name="gemini-2.5-flash",
@@ -53,14 +51,14 @@ def initialize_system(use_bedrock=False, max_tokens=1024):
                 temperature=0.1,
                 max_output_tokens=max_tokens
             )
-            print(" Gemini LLM initialized successfully")
-            print("   Model: Gemini 2.5 Flash")
-            print("   Temperature: 0.1")
-            print(f"   Max Output Tokens: {max_tokens}")
-            print("   Mode: Direct LLM invocation (no agent system)")
+            print("Gemini LLM initialized successfully")
+            print("Model: Gemini 2.5 Flash")
+            print("Temperature: 0.1")
+            print(f"Max Output Tokens: {max_tokens}")
+            print("Mode: Direct LLM invocation (no agent system)")
         except Exception as e:
-            print(f" Error initializing Gemini LLM: {e}")
-            print("\nTroubleshooting:")
+            print(f"Error initializing Gemini LLM: {e}")
+            print("Troubleshooting:")
             print("1. Ensure GEMINI_API_KEY is set in your .env file")
             print("2. Verify your Gemini API key is valid")
             sys.exit(1)
@@ -68,9 +66,9 @@ def initialize_system(use_bedrock=False, max_tokens=1024):
     print("\n Loading housing dataset...")
     try:
         housing_df = pd.read_csv("data/housing.csv")
-        print(f" Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
+        print(f"Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
     except Exception as e:
-        print(f" Error: Could not load housing dataset: {e}")
+        print(f"Error: Could not load housing dataset: {e}")
         sys.exit(1)
 
     return llm, housing_df
@@ -84,13 +82,12 @@ def load_validation_questions(filepath="data/final_validation.csv"):
         print(f"Loaded {len(df)} validation questions from {filepath}")
         return df
     except Exception as e:
-        print(f" Error loading validation questions: {e}")
+        print(f"Error loading validation questions: {e}")
         sys.exit(1)
 
 
 def format_dataset_for_prompt(df):
     """Format dataset as string representation for LLM"""
-    # Return dataset as string for LLM
     info = df.to_string(index=False)
     return info
 
@@ -100,17 +97,14 @@ def judge_responses_with_llm(llm, results):
     Use LLM as a judge to evaluate each response against ground truth.
     Updates results in-place with ground_truth_match field.
     """
-    print("\n" + "=" * 80)
-    print(" " * 25 + "LLM JUDGE EVALUATION")
-    print("=" * 80)
+    print("LLM JUDGE EVALUATION")
 
-    # Filter results that have ground truth
     results_to_judge = [r for r in results if r.get('ground_truth') and
                        not pd.isna(r.get('ground_truth')) and
                        r.get('ground_truth') != '']
 
     total_to_judge = len(results_to_judge)
-    print(f"\nEvaluating {total_to_judge} responses with ground truth using LLM judge...\n")
+    print(f"Evaluating {total_to_judge} responses with ground truth using LLM judge...\n")
 
     judged_count = 0
 
@@ -124,18 +118,14 @@ def judge_responses_with_llm(llm, results):
         print(f"[{idx + 1}/{total_to_judge}] Judging response for: {result['user_request'][:50]}...")
 
         try:
-            # Create the judge prompt
             judge_chain = llm_judge_prompt | llm
 
-            # Get LLM judgment
             judgment = judge_chain.invoke({
                 "user_request": result['user_request'],
                 "ground_truth": result['ground_truth'],
                 "model_response": result['llm_response']
             })
 
-            # Extract the judgment (1 or 0)
-            # Handle both Bedrock (AIMessage with .content) and Gemini (string)
             if hasattr(judgment, 'content'):
                 judgment_text = judgment.content
             elif isinstance(judgment, str):
@@ -143,30 +133,28 @@ def judge_responses_with_llm(llm, results):
             else:
                 judgment_text = str(judgment)
 
-            # Parse the score
             try:
                 score = int(judgment_text.strip())
                 if score not in [0, 1]:
-                    print(f"  Warning: Judge returned non-binary score: {judgment_text}, defaulting to 0")
+                    print(f"Warning: Judge returned non-binary score: {judgment_text}, defaulting to 0")
                     score = 0
             except ValueError:
-                print(f"  Warning: Could not parse judge score: {judgment_text}, defaulting to 0")
+                print(f"Warning: Could not parse judge score: {judgment_text}, defaulting to 0")
                 score = 0
 
             result['ground_truth_match'] = (score == 1)
             result['judge_score'] = score
 
             status = "CORRECT" if score == 1 else "INCORRECT"
-            print(f"  Judge: {status}")
+            print(f"Judge: {status}")
             judged_count += 1
 
         except Exception as e:
-            print(f"  Error during judging: {e}")
+            print(f"Error during judging: {e}")
             result['ground_truth_match'] = False
             result['judge_score'] = 0
 
-    print(f"\n Completed judging {judged_count} responses")
-    print("=" * 80)
+    print("\n Completed judging {judged_count} responses")
 
     return judged_count
 
@@ -176,17 +164,14 @@ def run_baseline_tests(llm, baseline_df, housing_df, use_bedrock=False):
 
     results = []
     total = len(baseline_df)
-    timeout_seconds = 120  # 2 minutes per question
+    timeout_seconds = 120
 
-    print("\n" + "=" * 80)
-    print(" " * 25 + "RUNNING BASELINE TESTS")
-    print("=" * 80)
+    print("RUNNING BASELINE TESTS")
 
     llm_name = "Bedrock Llama" if use_bedrock else "Gemini"
-    print(f"\nProcessing {total} questions with {llm_name} LLM (no agent system)...")
+    print(f"Processing {total} questions with {llm_name} LLM (no agent system)...")
     print(f"Timeout: {timeout_seconds}s per question\n")
 
-    # Format dataset information once
     dataset_context = format_dataset_for_prompt(housing_df)
 
     def call_llm(prompt, use_bedrock_flag):
@@ -197,7 +182,6 @@ def run_baseline_tests(llm, baseline_df, housing_df, use_bedrock=False):
         else:
             return llm._call(prompt)
 
-    # Create a single executor for all requests to avoid waiting on cleanup
     executor = ThreadPoolExecutor(max_workers=1)
 
     try:
@@ -218,7 +202,6 @@ IMPORTANT: Provide a BRIEF, CONCISE answer (maximum 2-3 sentences). Do not write
 
                 start_time = time.time()
 
-                # Submit task to executor
                 future = executor.submit(call_llm, full_prompt, use_bedrock)
                 try:
                     response_text = future.result(timeout=timeout_seconds)
@@ -228,8 +211,8 @@ IMPORTANT: Provide a BRIEF, CONCISE answer (maximum 2-3 sentences). Do not write
                         'user_request': user_request,
                         'ground_truth': ground_truth,
                         'llm_response': response_text,
-                        'ground_truth_match': None,  # Will be filled by judge
-                        'judge_score': None,  # Will be filled by judge
+                        'ground_truth_match': None,
+                        'judge_score': None,
                         'execution_time_seconds': round(execution_time, 2)
                     })
 
@@ -239,7 +222,6 @@ IMPORTANT: Provide a BRIEF, CONCISE answer (maximum 2-3 sentences). Do not write
                     execution_time = time.time() - start_time
                     print(f" TIMEOUT after {timeout_seconds}s - canceling and moving to next request")
 
-                    # Cancel the future to prevent blocking
                     future.cancel()
 
                     results.append({
@@ -265,7 +247,6 @@ IMPORTANT: Provide a BRIEF, CONCISE answer (maximum 2-3 sentences). Do not write
                     'execution_time_seconds': 0
                 })
     finally:
-        # Shutdown executor without waiting for pending tasks
         executor.shutdown(wait=False, cancel_futures=True)
 
     return results
@@ -293,7 +274,7 @@ def print_summary(results):
     errors = sum(1 for r in results if str(r['llm_response']).startswith('ERROR:'))
     successful = total - errors - timeouts
 
-    # Ground Truth Accuracy
+    # GTA
     results_with_gt = [r for r in results if r.get('ground_truth') and
                       not pd.isna(r.get('ground_truth')) and
                       r.get('ground_truth') != '']
@@ -318,9 +299,7 @@ def print_summary(results):
     else:
         avg_time = min_time = max_time = total_time = 0
 
-    print("\n" + "=" * 80)
-    print(" " * 30 + "BASELINE SUMMARY")
-    print("=" * 80)
+    print("BASELINE SUMMARY")
     print(f"\nTotal Questions: {total}")
     print(f"Successful: {successful}")
     print(f"Timeouts: {timeouts}")
@@ -333,10 +312,10 @@ def print_summary(results):
     print(f"Average Judge Score: {avg_judge_score:.2f}")
 
     print(f"\n--- Execution Time Statistics ---")
-    print(f" Average: {avg_time:.2f}s per request")
-    print(f" Minimum: {min_time:.2f}s")
-    print(f" Maximum: {max_time:.2f}s")
-    print(f" Total: {total_time:.2f}s")
+    print(f"Average: {avg_time:.2f}s per request")
+    print(f"Minimum: {min_time:.2f}s")
+    print(f"Maximum: {max_time:.2f}s")
+    print(f"Total: {total_time:.2f}s")
     print("\n" + "=" * 80)
 
 
@@ -373,11 +352,11 @@ def main():
     duration = (end_time - start_time).total_seconds()
 
     llm_name = "Bedrock Llama 3.1 70B" if args.bedrock else "Gemini 2.5 Flash"
-    print(f"\n Total execution time: {duration:.2f} seconds")
-    print(f" Results saved to: {output_path}")
-    print(f" LLM: {llm_name}")
-    print(f"\n This baseline test used raw {llm_name} with dataset context but no agent system.")
-    print(f" Compare these results with agent-based results to measure improvement.\n")
+    print(f"Total execution time: {duration:.2f} seconds")
+    print(f"Results saved to: {output_path}")
+    print(f"LLM: {llm_name}")
+    print(f"This baseline test used raw {llm_name} with dataset context but no agent system.")
+    print(f"Compare these results with agent-based results to measure improvement.\n")
 
 
 if __name__ == "__main__":

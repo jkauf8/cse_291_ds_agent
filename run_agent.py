@@ -28,7 +28,7 @@ def save_result_to_file(question: str, response: str, filename: str = "query_res
         f.write(f"## Query Time: {timestamp}\n\n")
         f.write(f"{response}\n\n")
     
-    print(f"\n✓ Result saved to {filename}\n")
+    print(f"\nResult saved to {filename}\n")
 
 def main():
     """Main function to run the interactive agent."""
@@ -47,13 +47,13 @@ def main():
         print("Failed to load dataset. Exiting.")
         return
     
-    print(f"✓ Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
-    
+    print(f"Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
+
     datasets = {"housing": housing_df}
-    
+
     # Initialize the agent graph
     agent = AgentGraph(llm=llm, datasets=datasets)
-    print("✓ Agent initialized successfully\n")
+    print("Agent initialized successfully\n")
     
     print("=" * 80)
     print("\nYou can ask questions like:")
@@ -69,38 +69,38 @@ def main():
     while True:
         try:
             # Get user input
-            user_query = input("\n🤔 Your question: ").strip()
+            user_query = input("\nYour question: ").strip()
             
             # Check for exit commands
             if user_query.lower() in ['quit', 'exit', 'q']:
-                print("\n👋 Thank you for using the Housing Data Analysis Agent. Goodbye!\n")
+                print("\n Thank you for using the Housing Data Analysis Agent. Goodbye!\n")
                 break
             
             # Skip empty queries
             if not user_query:
                 continue
             
-            print("\n⏳ Processing your query...\n")
+            print("\n Processing your query...\n")
             print("-" * 80)
             
             # Run the agent
             result = agent.run(user_query)
             
             print("-" * 80)
-            print("\n📊 RESULT:\n")
+            print("\n RESULT:\n")
             print(result.get('response', 'No response generated.'))
             print("\n" + "=" * 80)
             
             # Ask if user wants to save
-            save_choice = input("\n💾 Save this result to file? (y/n): ").strip().lower()
+            save_choice = input("\n Save this result to file? (y/n): ").strip().lower()
             if save_choice == 'y':
                 save_result_to_file(user_query, result.get('response', 'No response generated.'))
             
         except KeyboardInterrupt:
-            print("\n\n👋 Session interrupted. Goodbye!\n")
+            print("\n\n Session interrupted. Goodbye!\n")
             break
         except Exception as e:
-            print(f"\n❌ An error occurred: {e}")
+            print(f"\n An error occurred: {e}")
             print("Please try again with a different question.\n")
 
 if __name__ == "__main__":
