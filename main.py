@@ -1,9 +1,3 @@
-"""
-Main script with chatbot-like interface using AgentGraph.
-Allows interactive conversation with the data science agent.
-Supports both Gemini and AWS Bedrock LLMs.
-"""
-
 import pandas as pd
 from agent_graph import AgentGraph
 from gemini_llm import GeminiLLM
@@ -25,9 +19,9 @@ def load_dataset(file_path: str):
 
 def interactive_mode(agent):
     """Run the agent in interactive mode, allowing user to input queries."""
-    print("\n" + "=" * 80)
-    print(" " * 25 + "INTERACTIVE MODE")
-    print("=" * 80)
+    print("================================================================================")
+    print("INTERACTIVE MODE")
+    print("================================================================================")
     print("\nEnter your questions about the housing dataset.")
     print("Type 'exit' or 'quit' to end the session.\n")
 
@@ -47,14 +41,14 @@ def interactive_mode(agent):
             result = agent.run(user_input)
             response = result.get('response', 'No response generated.')
 
-            print("=" * 80)
+            print("================================================================================")
             print("RESPONSE:")
-            print("=" * 80)
+            print("================================================================================")
             print(response)
-            print("=" * 80 + "\n")
+            print("================================================================================")
 
         except KeyboardInterrupt:
-            print("\n\nInterrupted. Exiting interactive mode.")
+            print("\nInterrupted. Exiting interactive mode.")
             break
         except Exception as e:
             print(f"\nError processing question: {e}\n")

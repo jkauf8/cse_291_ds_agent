@@ -11,10 +11,9 @@ from langchain_aws import ChatBedrock
 import os
 import argparse
 import sys
-import traceback # Import traceback for better error handling
+import traceback
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 def load_dataset(file_path: str):
@@ -35,7 +34,7 @@ def load_dataset(file_path: str):
 def initialize_system(use_bedrock: bool):
     """Initialize LLM, datasets, and agent graph"""
 
-    # --- 1. Initialize LLM ---
+    # 1. Initialize LLM
     if use_bedrock:
         print("\nLoading AWS Bedrock LLM...")
         try:
@@ -60,7 +59,7 @@ def initialize_system(use_bedrock: bool):
             traceback.print_exc()
             return None
 
-    # --- 2. Load Datasets ---
+    # 2. Load Data
     print("\nLoading datasets...")
     housing_df = load_dataset('data/housing.csv')
     if housing_df is None:
@@ -68,7 +67,7 @@ def initialize_system(use_bedrock: bool):
 
     datasets = {"housing": housing_df}
 
-    # --- 3. Initialize AgentGraph ---
+    # 3. Initialize Agent System
     print("\nInitializing AgentGraph...")
     try:
         agent_graph = AgentGraph(llm=llm, datasets=datasets)
@@ -103,7 +102,6 @@ def create_gradio_app(agent_graph: AgentGraph, llm_name: str):
             print(response)
             print("\n" + "=" * 80 + "\n")
 
-            # Return the response string to the Gradio UI
             return response
 
         except Exception as e:
@@ -111,7 +109,6 @@ def create_gradio_app(agent_graph: AgentGraph, llm_name: str):
             traceback.print_exc()
             return "Sorry, I encountered an error while processing your request. Please check the console logs for details."
 
-    # --- Create the Gradio Interface ---
     print("Creating Gradio interface...")
     title_llm = "Bedrock Llama 3.1 70B" if "Bedrock" in llm_name else "Gemini 2.5 Flash"
     title_llm = ""
@@ -133,7 +130,6 @@ def create_gradio_app(agent_graph: AgentGraph, llm_name: str):
 
 
 if __name__ == "__main__":
-    # Handle command-line argument for LLM choice
     parser = argparse.ArgumentParser(description="Data Science Agent with Housing Dataset")
     parser.add_argument(
         '--bedrock',
@@ -156,7 +152,7 @@ if __name__ == "__main__":
         print("=" * 80)
         print("FATAL: System initialization failed. Check logs above.")
         print("=" * 80)
-        sys.exit(1) # Exit if setup fails
+        sys.exit(1)
 
     print("=" * 80)
     print("System initialized. Launching Gradio interface...")

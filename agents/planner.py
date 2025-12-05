@@ -9,17 +9,13 @@ from prompts.planner_prompt import planner_prompt
 def extract_json_from_string(s):
     """Extracts a JSON object from a string."""
     try:
-        # Find the start of the JSON object
         start_index = s.find('{')
         if start_index == -1:
             return None
 
-        # Find the end of the JSON object
         end_index = s.rfind('}')
         if end_index == -1:
             return None
-
-        # Extract the JSON string
         json_str = s[start_index:end_index + 1]
         return json.loads(json_str)
     except (json.JSONDecodeError, IndexError):
@@ -58,7 +54,6 @@ class Planner:
         Returns: 
             dict: The tool to use and its parameters
         """
-        # Truncate the user_request to avoid exceeding the model's context window
         max_length = 1024
         if len(user_request) > max_length:
             user_request = user_request[:max_length]
@@ -68,17 +63,13 @@ class Planner:
 
         # Extract text from response (handle both Gemini string and Bedrock AIMessage)
         if hasattr(raw_result, 'content'):
-            # Bedrock/LangChain returns AIMessage object with .content attribute
             result_text = raw_result.content
         else:
-            # Gemini wrapper returns string directly
             result_text = str(raw_result)
 
-        # Manually parse the JSON from the raw string
         json_result = extract_json_from_string(result_text)
         
         if json_result is None:
-            # Fallback or error handling if JSON parsing fails
             return {"tools": ["direct_response()"]}
             
         return json_result

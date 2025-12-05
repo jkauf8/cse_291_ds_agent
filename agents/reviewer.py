@@ -1,6 +1,5 @@
 import os
 
-# from langchain_aws import ChatBedrock
 from langchain_core.output_parsers import JsonOutputParser
 
 
@@ -40,5 +39,4 @@ class Reviewer:
             "tool_result": tool_result
         })
         
-        # Return the routing decision
         return result["route"]

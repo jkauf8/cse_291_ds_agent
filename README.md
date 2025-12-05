@@ -12,13 +12,12 @@ This project demonstrates how agent design patterns can transform a base LLM fro
 
 | Metric | Baseline LLM | Data Science Agent | Improvement |
 |--------|--------------|-------------------|-------------|
-| Ground Truth Accuracy | 20% (4/20) | 90% (18/20) | **+324%** |
+| Ground Truth Accuracy | 20% (4/20) | 90% (18/20) | **4.5x more accurate** |
 | Tool Selection Accuracy | N/A | 100% (20/20) | - |
 | Avg. Time per Request | 47.38s | 19.63s | **2.4x faster** |
 
-**LLM Backend**: Meta Llama 3.1 70B Instruct (AWS Bedrock)
-
-See [`qualitative_results_comparison.md`](qualitative_results_comparison.md) for detailed analysis.
+**Agent LLM**: Meta Llama 3.1 70B Instruct (AWS Bedrock)
+**Evaluation Judge**: Gemini 2.5 Flash (consistent across all evaluations)
 
 ## Architecture
 
@@ -56,7 +55,7 @@ Unlike systems that generate arbitrary Python code (AI Scientist) or use complex
 
 ```
 Project/
-├── code/
+├── parent_dir/
 │   ├── main.py                    # Entry point with interactive mode
 │   ├── agent_graph.py             # LangGraph workflow orchestration
 │   ├── gemini_llm.py              # Gemini LLM integration
@@ -73,14 +72,14 @@ Project/
 │   │   └── final_reporter_prompt.py  # Report formatting prompts
 │   ├── data/
 │   │   ├── housing.csv            # Housing dataset (545 × 13)
+│   │   ├── final_validation.csv   # Final evaluation dataset (20 queries)
 │   │   └── coffee_shop_sales.xlsx # Coffee sales dataset (149K × 14) (not utilized)
 │   ├── validation/
-│   │   ├── validation.csv         # Test queries with ground truth
-│   │   └── validation_test.py     # Automated evaluation script
+│   │   ├── validation_test.py     # Automated evaluation script
+│   │   └── validation_results_20251120_205139.csv  # Final agent results
 │   └── baselines/
 │       ├── baseline1_test.py      # Direct prompting baseline
-│       └── baseline2_test.py      # Chain-of-thought baseline
-├── qualitative_results_comparison.md  # Performance analysis
+│       └── baseline_results_20251118_131340.csv    # Final baseline results
 └── README.md                      # This file
 ```
 
@@ -88,7 +87,7 @@ Project/
 
 ### Prerequisites
 - Python 3.11+
-- AWS credentials (for Bedrock) OR Google API key (for Gemini)
+- AWS credentials (for Bedrock) AND Google API key (for Gemini)
 
 ### Setup
 
@@ -102,13 +101,12 @@ source project_venv/bin/activate  # macOS/Linux
 # or: project_venv\Scripts\activate  # Windows
 
 # Install dependencies
-cd code
 pip install -r requirements.txt
 ```
 
 ### Environment Configuration
 
-Create a `.env` file in the `code/` directory:
+Create a `.env` file in the `parent_dir/` directory:
 
 ```env
 # For Gemini (alternative to Bedrock)
@@ -122,10 +120,21 @@ AWS_DEFAULT_REGION=us-west-1
 
 ## Usage
 
-### Interactive Mode
+### Quick Interactive Mode (Gemini)
+
+For quick experimentation with Gemini 2.5 Flash:
 
 ```bash
-cd code
+python run_agent.py
+```
+
+This launches an interactive session where you can ask questions and get real-time responses. Type `quit`, `exit`, or `q` to stop.
+
+### Interactive Mode (Bedrock)
+
+For interactive mode with Llama 3.1 70B (matching the evaluation setup):
+
+```bash
 python main.py --interact --bedrock
 ```
 
@@ -138,6 +147,17 @@ The housing dataset contains 545 properties with an average price
 of $540,296. Prices range from $75,000 to $13,300,000 with a
 median of $450,000...
 ```
+
+### Web Interface (Gradio)
+
+Launch a browser-based chat interface:
+
+```bash
+python run_webapp.py          # Uses Gemini
+python run_webapp.py --bedrock  # Uses Llama 3.1 70B
+```
+
+Opens a local web server with a chat UI for interacting with the agent.
 
 ### Batch Mode
 
@@ -152,17 +172,24 @@ Results saved to `analysis_results.md`.
 
 ```bash
 cd validation
-python validation_test.py
+python validation_test.py --bedrock  # Uses Llama 3.1 70B for agent, Gemini 2.5 Flash for judge
 ```
 
-Evaluates agent on 20 test queries with automatic LLM-based judging.
+Evaluates agent on 20 test queries from `data/final_validation.csv` with automatic LLM-based judging. The `--bedrock` flag uses Llama 3.1 70B as the agent, while the judge is always Gemini 2.5 Flash for consistent evaluation.
 
 ### Baseline Comparison
 
 ```bash
 cd baselines
-python baseline1_test.py  # Direct prompting baseline
+python baseline1_test.py --bedrock  # Direct prompting baseline with Llama 3.1 70B, judged by Gemini 2.5 Flash
 ```
+
+Runs the same 20 queries from `data/final_validation.csv` through a direct LLM approach (no agent system) for comparison.
+
+**Final Evaluation Results**: The quantitative results reported in our final report used:
+- Agent: `validation/validation_results_20251120_205139.csv`
+- Baseline: `baselines/baseline_results_20251118_131340.csv`
+- Both evaluated on `data/final_validation.csv` (20 queries with ground truth)
 
 ## Key Features
 
@@ -196,13 +223,18 @@ Specialized prompts for each agent:
 - **Reporter**: Markdown formatting and explanation guidelines
 
 ### 4. LLM-as-a-Judge Evaluation
-Automated validation using the same LLM (Llama 3.1 70B) as a judge:
+Automated validation using **Gemini 2.5 Flash** as the judge (consistent across both baseline and agent evaluations):
 ```python
 judge_prompt = """
 Compare the agent's answer to the ground truth.
 Score 1 if semantically equivalent, 0 otherwise.
 """
 ```
+
+**Evaluation Framework**:
+- **Agent/Baseline LLM**: Llama 3.1 70B (performs the actual data analysis)
+- **Judge LLM**: Gemini 2.5 Flash (evaluates output quality)
+- **Rationale**: Keeping the judge separate ensures consistent evaluation methodology across all approaches and prevents potential biases from self-evaluation
 
 ## Evaluation Metrics
 
@@ -231,46 +263,8 @@ The agent achieves higher accuracy AND faster execution by:
 2. Shorter inference chains (tool selection is simpler than full analysis)
 3. Focused responses (tools return structured data, not verbose explanations)
 
-## Technical Details
 
-### LangGraph State Management
-The agent graph uses typed state to pass information between nodes:
-
-```python
-class State(TypedDict):
-    question: str
-    route: dict  # Tool selection routing
-    tool_result: list  # Outputs from tools
-    dataset_name: str
-    target_column: str
-    selected_tools: list
-    planner_iteration_count: int
-```
-
-### Conditional Routing
-The graph supports dynamic workflows:
-
-```python
-workflow.add_conditional_edges(
-    "planner_agent",
-    self.router,
-    {
-        "DescribeData": "describe_data_tool",
-        "RunRegression": "run_regression_tool",
-        "DescribeAndRegress": "describe_and_regress_tool",
-    },
-)
-```
-
-### Loop Prevention
-Maximum 2 Planner iterations to prevent infinite loops:
-```python
-if current_iteration >= max_iterations:
-    print("Forcing final report")
-    state['route'] = {'router_decision': 'final_reporter'}
-```
-
-## Datasets
+## Datasets Utilized
 
 ### Housing Dataset
 - **Size**: 545 properties × 13 features
