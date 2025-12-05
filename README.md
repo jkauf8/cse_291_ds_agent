@@ -23,65 +23,16 @@ This project demonstrates how agent design patterns can transform a base LLM fro
 
 ### Multi-Agent Design
 
-```
-User Question
-     ↓
-[Planner Agent] ──→ Tool Selection (describe_data, run_regression, both)
-     ↓
-[Tool Execution] ──→ Statistical Computation
-     ↓
-[Reviewer Agent] ──→ Quality Check (iterate or proceed?)
-     ↓
-[Reporter Agent] ──→ Natural Language Report
-```
+![Agent Architecture](../architecture.png)
 
 **Key Components**:
 - **Planner** (`agents/planner.py`): Interprets queries and selects analytical tools
 - **Reviewer** (`agents/reviewer.py`): Validates tool outputs and decides if re-planning is needed
 - **Reporter** (`agents/final_reporter.py`): Synthesizes results into markdown reports
+- **LLM-as-a-Judge**: Evaluates response quality against ground truth
 - **Tools**:
   - `describe_data()`: Dataset statistics, distributions, correlations
   - `run_regression()`: Random Forest regression with feature importance
-
-### Design Philosophy
-
-Unlike systems that generate arbitrary Python code (AI Scientist) or use complex multi-agent hierarchies (6+ agents), this project uses:
-- **Constrained toolset**: Only 2 predefined analytical functions
-- **Linear reasoning path**: Predictable describe → analyze → report workflow
-- **Deterministic behavior**: Same query produces same tool selection
-- **Interpretability**: Full visibility into agent reasoning and tool choices
-
-## Project Structure
-
-```
-Project/
-├── parent_dir/
-│   ├── main.py                    # Entry point with interactive mode
-│   ├── agent_graph.py             # LangGraph workflow orchestration
-│   ├── gemini_llm.py              # Gemini LLM integration
-│   ├── agents/
-│   │   ├── planner.py             # Tool selection agent
-│   │   ├── reviewer.py            # Quality assurance agent
-│   │   └── final_reporter.py     # Report generation agent
-│   ├── tools/
-│   │   ├── describe_data.py       # Statistical description tool
-│   │   └── regression_tool.py    # Random Forest regression tool
-│   ├── prompts/
-│   │   ├── planner_prompt.py      # Few-shot tool selection prompts
-│   │   ├── reviewer_prompt.py     # Review criteria prompts
-│   │   └── final_reporter_prompt.py  # Report formatting prompts
-│   ├── data/
-│   │   ├── housing.csv            # Housing dataset (545 × 13)
-│   │   ├── final_validation.csv   # Final evaluation dataset (20 queries)
-│   │   └── coffee_shop_sales.xlsx # Coffee sales dataset (149K × 14) (not utilized)
-│   ├── validation/
-│   │   ├── validation_test.py     # Automated evaluation script
-│   │   └── validation_results_20251120_205139.csv  # Final agent results
-│   └── baselines/
-│       ├── baseline1_test.py      # Direct prompting baseline
-│       └── baseline_results_20251118_131340.csv    # Final baseline results
-└── README.md                      # This file
-```
 
 ## Installation
 

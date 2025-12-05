@@ -36,7 +36,7 @@ def initialize_system(use_bedrock=False):
             print(f"Error initializing Bedrock LLM: {e}")
             sys.exit(1)
     else:
-        print("\n Initializing Gemini LLM for Agent...")
+        print("\nInitializing Gemini LLM for Agent...")
         try:
             llm = GeminiLLM(model_name="gemini-2.5-flash", api_key=os.getenv("GEMINI_API_KEY"))
             print("Gemini LLM initialized successfully")
@@ -45,7 +45,7 @@ def initialize_system(use_bedrock=False):
             print(f"Error initializing Gemini LLM: {e}")
             sys.exit(1)
 
-    print("\n Loading datasets...")
+    print("\nLoading datasets...")
     try:
         housing_df = pd.read_csv('data/housing.csv')
         print(f"Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
@@ -55,7 +55,7 @@ def initialize_system(use_bedrock=False):
 
     datasets = {"housing": housing_df}
 
-    print("\n Initializing AgentGraph...")
+    print("\nInitializing AgentGraph...")
     try:
         agent_graph = AgentGraph(llm=llm, datasets=datasets)
         print("AgentGraph initialized successfully")

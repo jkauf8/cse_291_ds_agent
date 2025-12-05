@@ -63,14 +63,18 @@ def initialize_system(use_bedrock=False, max_tokens=1024):
             print("2. Verify your Gemini API key is valid")
             sys.exit(1)
 
-    housing_df = pd.read_csv("data/housing.csv")
+    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    housing_path = os.path.join(script_dir, "data", "housing.csv")
+    housing_df = pd.read_csv(housing_path)
     print(f" Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
 
     return llm, housing_df
 
 
 def load_validation_questions(filepath="data/baseline2_data.csv"):
-    df = pd.read_csv(filepath)
+    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    full_path = os.path.join(script_dir, filepath)
+    df = pd.read_csv(full_path)
     df = df[['user_request', 'ground_truth']]
     print(f"\n Loaded {len(df)} baseline2 questions from {filepath}")
     print(f"Evaluation mode: Ground Truth Accuracy ONLY (no tool selection evaluation)")
@@ -244,7 +248,8 @@ def save_results(results):
     """Save results to CSV with timestamp in filename"""
     try:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = f"baselines/baseline2_results_{timestamp}.csv"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, f"baseline2_results_{timestamp}.csv")
 
         results_df = pd.DataFrame(results)
         results_df.to_csv(output_path, index=False)

@@ -22,7 +22,7 @@ def initialize_system(use_bedrock=False, max_tokens=1024):
     print("BASELINE LLM INITIALIZATION")
 
     if use_bedrock:
-        print("\n Initializing AWS Bedrock LLM (base model, no agents)...")
+        print("\nInitializing AWS Bedrock LLM (base model, no agents)...")
         try:
             llm = ChatBedrock(
                 model_id="meta.llama3-1-70b-instruct-v1:0",
@@ -63,9 +63,11 @@ def initialize_system(use_bedrock=False, max_tokens=1024):
             print("2. Verify your Gemini API key is valid")
             sys.exit(1)
 
-    print("\n Loading housing dataset...")
+    print("\nLoading housing dataset...")
     try:
-        housing_df = pd.read_csv("data/housing.csv")
+        script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        housing_path = os.path.join(script_dir, "data", "housing.csv")
+        housing_df = pd.read_csv(housing_path)
         print(f"Loaded housing dataset: {len(housing_df)} rows, {len(housing_df.columns)} columns")
     except Exception as e:
         print(f"Error: Could not load housing dataset: {e}")
@@ -77,7 +79,9 @@ def initialize_system(use_bedrock=False, max_tokens=1024):
 def load_validation_questions(filepath="data/final_validation.csv"):
     """Load validation questions from CSV"""
     try:
-        df = pd.read_csv(filepath)
+        script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        full_path = os.path.join(script_dir, filepath)
+        df = pd.read_csv(full_path)
         # df = df.iloc[0:2]
         print(f"Loaded {len(df)} validation questions from {filepath}")
         return df
@@ -154,7 +158,7 @@ def judge_responses_with_llm(llm, results):
             result['ground_truth_match'] = False
             result['judge_score'] = 0
 
-    print("\n Completed judging {judged_count} responses")
+    print("Completed judging {judged_count} responses")
 
     return judged_count
 
@@ -170,7 +174,7 @@ def run_baseline_tests(llm, baseline_df, housing_df, use_bedrock=False):
 
     llm_name = "Bedrock Llama" if use_bedrock else "Gemini"
     print(f"Processing {total} questions with {llm_name} LLM (no agent system)...")
-    print(f"Timeout: {timeout_seconds}s per question\n")
+    print(f"Timeout: {timeout_seconds}s per question")
 
     dataset_context = format_dataset_for_prompt(housing_df)
 
@@ -256,14 +260,15 @@ def save_results(results):
     """Save results to CSV with timestamp in filename"""
     try:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_path = f"baselines/baseline_results_{timestamp}.csv"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        output_path = os.path.join(script_dir, f"baseline_results_{timestamp}.csv")
 
         results_df = pd.DataFrame(results)
         results_df.to_csv(output_path, index=False)
-        print(f"\n Results saved to {output_path}")
+        print(f"Results saved to {output_path}")
         return output_path
     except Exception as e:
-        print(f" Error saving results: {e}")
+        print(f"Error saving results: {e}")
         sys.exit(1)
 
 
@@ -289,7 +294,6 @@ def print_summary(results):
     judge_scores = [r.get('judge_score', 0) for r in results_with_gt if r.get('judge_score') is not None]
     avg_judge_score = (sum(judge_scores) / len(judge_scores)) if judge_scores else 0
 
-    # Execution time statistics
     execution_times = [r['execution_time_seconds'] for r in results if r['execution_time_seconds'] > 0]
     if execution_times:
         avg_time = sum(execution_times) / len(execution_times)
@@ -298,26 +302,25 @@ def print_summary(results):
         total_time = sum(execution_times)
     else:
         avg_time = min_time = max_time = total_time = 0
-
+    
+    print("\n")
     print("BASELINE SUMMARY")
-    print(f"\nTotal Questions: {total}")
+    print(f"Total Questions: {total}")
     print(f"Successful: {successful}")
     print(f"Timeouts: {timeouts}")
     print(f"Errors: {errors}")
     print(f"Success Rate: {(successful/total)*100:.1f}%")
-
-    print(f"\n--- GROUND TRUTH ACCURACY (GTA) ---")
+    print("\n")
+    print(f"GROUND TRUTH ACCURACY (GTA)")
     print(f"Ground Truth Accuracy (via LLM Judge): {gta:.1f}%")
     print(f"Correct Ground Truth Matches: {gt_correct_count}/{len(results_with_gt)}")
     print(f"Average Judge Score: {avg_judge_score:.2f}")
-
-    print(f"\n--- Execution Time Statistics ---")
+    print("\n")
+    print(f"Execution Time Statistics")
     print(f"Average: {avg_time:.2f}s per request")
     print(f"Minimum: {min_time:.2f}s")
     print(f"Maximum: {max_time:.2f}s")
     print(f"Total: {total_time:.2f}s")
-    print("\n" + "=" * 80)
-
 
 def main():
     """Main execution function"""
@@ -356,7 +359,7 @@ def main():
     print(f"Results saved to: {output_path}")
     print(f"LLM: {llm_name}")
     print(f"This baseline test used raw {llm_name} with dataset context but no agent system.")
-    print(f"Compare these results with agent-based results to measure improvement.\n")
+    print(f"Compare these results with agent-based results to measure improvement.")
 
 
 if __name__ == "__main__":
