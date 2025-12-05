@@ -129,7 +129,6 @@ def judge_responses_with_llm(llm, results):
     print("==================================")
     print("LLM JUDGE EVALUATION")
 
-    # Filter results that have ground truth
     results_to_judge = [r for r in results if r.get('ground_truth') and
                        not pd.isna(r.get('ground_truth')) and
                        r.get('ground_truth') != '']
@@ -140,7 +139,6 @@ def judge_responses_with_llm(llm, results):
     judged_count = 0
 
     for idx, result in enumerate(results):
-        # Skip if no ground truth
         if not result.get('ground_truth') or pd.isna(result.get('ground_truth')) or result.get('ground_truth') == '':
             result['ground_truth_match'] = None
             result['judge_score'] = None
@@ -149,20 +147,16 @@ def judge_responses_with_llm(llm, results):
         print(f"[{idx + 1}/{total_to_judge}] Judging response for: {result['user_request'][:50]}...")
 
         try:
-            # Create the judge prompt
             judge_chain = llm_judge_prompt | llm
 
-            # Get LLM judgment
             judgment = judge_chain.invoke({
                 "user_request": result['user_request'],
                 "ground_truth": result['ground_truth'],
                 "model_response": result['agent_response']
             })
 
-            # Extract the judgment (1 or 0)
             judgment_text = judgment.content.strip() if hasattr(judgment, 'content') else str(judgment).strip()
 
-            # Parse the score
             try:
                 score = int(judgment_text)
                 if score not in [0, 1]:
@@ -375,10 +369,10 @@ def print_summary(metrics):
         print(f"  Both Correct: {stats['both_correct']}/{stats['total']} ({both_acc:.1f}%)")
 
     print(f"\n--- Execution Time Statistics ---")
-    print(f" Average: {metrics['avg_time']:.2f}s per request")
-    print(f" Minimum: {metrics['min_time']:.2f}s")
-    print(f" Maximum: {metrics['max_time']:.2f}s")
-    print(f" Total: {metrics['total_time']:.2f}s")
+    print(f"Average: {metrics['avg_time']:.2f}s per request")
+    print(f"Minimum: {metrics['min_time']:.2f}s")
+    print(f"Maximum: {metrics['max_time']:.2f}s")
+    print(f"Total: {metrics['total_time']:.2f}s")
 
 
 def main():
@@ -411,15 +405,15 @@ def main():
     duration = (end_time - start_time).total_seconds()
 
     print(f"\n Total execution time: {duration:.2f} seconds")
-    print(f" Results saved to: {output_path}")
+    print(f"Results saved to: {output_path}")
 
     agent_llm_type = "Bedrock Llama 3.1 70B" if args.bedrock else "Gemini 2.5 Flash"
     judge_llm_type = "Gemini 2.5 Flash"
 
-    print(f" Agent LLM: {agent_llm_type}")
-    print(f" Judge LLM: {judge_llm_type}")
-    print(f" Tool Selection Accuracy (TSA): {metrics['tsa']:.1f}%")
-    print(f" Ground Truth Accuracy (GTA): {metrics['gta']:.1f}%")
+    print(f"Agent LLM: {agent_llm_type}")
+    print(f"Judge LLM: {judge_llm_type}")
+    print(f"Tool Selection Accuracy (TSA): {metrics['tsa']:.1f}%")
+    print(f"Ground Truth Accuracy (GTA): {metrics['gta']:.1f}%")
 
 
 if __name__ == "__main__":

@@ -6,13 +6,13 @@ A multi-agent system that transforms natural language questions into rigorous st
 
 ## Overview
 
-This project demonstrates how agent design patterns can transform a base LLM from **21% accuracy** to **89.5% accuracy** on data science tasks, while being **2.4x faster** than naive prompting approaches. The system uses a multi-agent LangGraph architecture where specialized agents (Planner, Reviewer, Reporter) orchestrate tool selection and analysis generation.
+This project demonstrates how agent design patterns can transform a base LLM from **20% accuracy** to **90% accuracy** on data science tasks, while being **2.4x faster** than naive prompting approaches. The system uses a multi-agent LangGraph architecture where specialized agents (Planner, Reviewer, Reporter) orchestrate tool selection and analysis generation.
 
 ### Key Results
 
 | Metric | Baseline LLM | Data Science Agent | Improvement |
 |--------|--------------|-------------------|-------------|
-| Ground Truth Accuracy | 21.1% (4/19) | 89.5% (17/19) | **+324%** |
+| Ground Truth Accuracy | 20% (4/20) | 90% (18/20) | **+324%** |
 | Tool Selection Accuracy | N/A | 100% (20/20) | - |
 | Avg. Time per Request | 47.38s | 19.63s | **2.4x faster** |
 
@@ -212,7 +212,7 @@ Correctness of tool choice for a given query:
 
 ### Ground Truth Accuracy (GTA)
 Semantic correctness of final answers via LLM judge:
-- **Current**: 89.5% (17/19)
+- **Current**: 90% (18/20)
 
 ### Per-Tool Breakdown
 - `describe_data()`: 90% accuracy (9/10)
@@ -223,8 +223,8 @@ Semantic correctness of final answers via LLM judge:
 
 | Approach | Description | Accuracy | Avg. Time |
 |----------|-------------|----------|-----------|
-| **Baseline** | Direct prompting | 21.1% | 47.38s |
-| **This Project** | Tool-augmented agent | **89.5%** | **19.63s** |
+| **Baseline** | Direct prompting | 20% | 47.38s |
+| **This Project** | Tool-augmented agent | **90%** | **19.63s** |
 
 The agent achieves higher accuracy AND faster execution by:
 1. Offloading computation to deterministic tools (no "reasoning through" math)
